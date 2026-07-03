@@ -1,0 +1,3208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Access Management — Cotiviti</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 220px;
+    --header-h: 56px;
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --sidebar-bg: #0f172a;
+    --sidebar-hover: #1e293b;
+    --sidebar-active: #1d4ed8;
+    --body-bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --blue: #2563eb;
+    --blue-bg: #dbeafe;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    --radius: 8px;
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--body-bg); color: var(--text); display: flex; min-height: 100vh; font-size: 14px; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--sidebar-bg); display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+  }
+  .sidebar-brand {
+    height: var(--header-h); display: flex; align-items: center; gap: 10px;
+    padding: 0 18px; border-bottom: 1px solid #1e293b;
+  }
+  .sidebar-brand .logo { width: 28px; height: 28px; background: var(--primary-light); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-brand .logo svg { width: 16px; height: 16px; fill: white; }
+  .sidebar-brand span { color: #f8fafc; font-weight: 700; font-size: 15px; letter-spacing: -.3px; }
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-label { color: #475569; font-size: 10px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; padding: 12px 18px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 18px;
+    color: #94a3b8; cursor: pointer; transition: background .15s, color .15s; border-radius: 0;
+    text-decoration: none; font-size: 13.5px; font-weight: 500;
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+  .nav-item.active { background: var(--sidebar-active); color: #fff; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .sidebar-footer { padding: 16px 18px; border-top: 1px solid #1e293b; display: flex; align-items: center; gap: 10px; }
+  .admin-avatar { width: 32px; height: 32px; background: var(--primary-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .admin-info { flex: 1; min-width: 0; }
+  .admin-name { color: #f1f5f9; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .admin-role { color: #64748b; font-size: 11px; }
+
+  /* ── Main layout ── */
+  #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Header ── */
+  #header {
+    height: var(--header-h); background: var(--card-bg); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow);
+  }
+  .header-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .header-badge { background: var(--amber-bg); color: var(--amber); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  /* ── Content ── */
+  #content { flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── Search bar ── */
+  .search-wrap { position: relative; max-width: 400px; }
+  .search-wrap input {
+    width: 100%; padding: 9px 14px 9px 38px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 14px; background: var(--card-bg); outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .search-wrap input:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+  .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  #search-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg);
+    border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md);
+    z-index: 200; display: none;
+  }
+  #search-dropdown.open { display: block; }
+  .search-result-item { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .1s; }
+  .search-result-item:hover { background: #f8fafc; }
+  .search-result-item .sr-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .search-result-item .sr-info { flex: 1; }
+  .search-result-item .sr-name { font-weight: 600; font-size: 13px; }
+  .search-result-item .sr-email { font-size: 11px; color: var(--text-muted); }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+
+  /* ── Profile card ── */
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-weight: 700; font-size: 14px; }
+  .card-body { padding: 18px; }
+
+  #profile-empty { padding: 40px 18px; text-align: center; color: var(--text-muted); }
+  #profile-empty svg { width: 40px; height: 40px; margin: 0 auto 10px; display: block; opacity: .3; }
+
+  .profile-top { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .profile-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
+  .profile-name { font-size: 17px; font-weight: 700; }
+  .profile-title { font-size: 13px; color: var(--text-muted); }
+  .profile-rows { display: flex; flex-direction: column; gap: 10px; }
+  .profile-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .profile-row .pr-label { color: var(--text-muted); font-size: 12px; font-weight: 500; flex-shrink: 0; }
+  .profile-row .pr-val { font-size: 13px; font-weight: 500; text-align: right; }
+
+  /* ── Badges ── */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-green::before { background: var(--green); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-red::before { background: var(--red); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-amber::before { background: var(--amber); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); }
+  .badge-blue::before { background: var(--blue); }
+  .badge-gray { background: #f1f5f9; color: #64748b; }
+  .badge-gray::before { background: #94a3b8; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 18px; }
+  .tab-btn {
+    padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--text-muted);
+    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s, border-color .15s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-panel { display: none; padding: 18px; }
+  .tab-panel.active { display: block; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent; transition: background .15s, border-color .15s, opacity .15s;
+    white-space: nowrap;
+  }
+  .btn:active { opacity: .85; }
+  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-light); border-color: var(--primary-light); }
+  .btn-danger { background: var(--red); color: white; border-color: var(--red); }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-success { background: var(--green); color: white; border-color: var(--green); }
+  .btn-success:hover { background: #15803d; }
+  .btn-outline { background: white; color: var(--text); border-color: var(--border); }
+  .btn-outline:hover { background: #f8fafc; }
+  .btn-amber { background: var(--amber); color: white; border-color: var(--amber); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-xs { padding: 3px 8px; font-size: 11.5px; }
+  .btn svg { width: 13px; height: 13px; }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* ── Info grid ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .info-item .ii-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .info-item .ii-val { font-size: 14px; font-weight: 500; }
+
+  /* ── Tags ── */
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { background: #f1f5f9; color: #334155; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 4px; }
+
+  /* ── Section header ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 14px; font-weight: 700; }
+
+  /* ── Okta/AD action bar ── */
+  .action-bar { display: flex; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  /* ── Collapsible ── */
+  .collapsible-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+  }
+  .collapsible-header:hover { background: #fafafa; }
+  .collapsible-icon { transition: transform .2s; }
+  .collapsible-icon.open { transform: rotate(180deg); }
+  .collapsible-body { padding: 0 18px 16px; }
+
+  /* ── Audit log ── */
+  .audit-entry { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .audit-entry:last-child { border-bottom: none; }
+  .audit-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .audit-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-top: 1px; }
+  .audit-action { font-size: 13px; font-weight: 500; }
+  .audit-by { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 32px; color: var(--text-muted); }
+  .empty-state svg { width: 36px; height: 36px; margin: 0 auto 8px; display: block; opacity: .3; }
+
+  /* ── Pending request cards ── */
+  .req-card { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .req-card:last-child { margin-bottom: 0; }
+  .req-info { flex: 1; }
+  .req-title { font-size: 13px; font-weight: 600; }
+  .req-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .req-actions { display: flex; gap: 6px; }
+
+  /* ── Modal ── */
+  #modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500;
+    display: none; align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card-bg); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    width: 480px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow-y: auto;
+    animation: modal-in .18s ease;
+  }
+  @keyframes modal-in { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: background .15s; border: none; background: none; }
+  .modal-close:hover { background: #f1f5f9; color: var(--text); }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── Confirm dialog ── */
+  #confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 600;
+    display: none; align-items: center; justify-content: center;
+  }
+  #confirm-overlay.open { display: flex; }
+  .confirm-dialog {
+    background: var(--card-bg); border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    width: 380px; max-width: calc(100vw - 32px); padding: 24px;
+    animation: modal-in .16s ease;
+  }
+  .confirm-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-body { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── Form ── */
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .form-control {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; outline: none; transition: border-color .15s, box-shadow .15s;
+    background: white; width: 100%;
+  }
+  .form-control:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+  /* ── Toast ── */
+  #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .toast {
+    background: #1e293b; color: #f8fafc; padding: 11px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    display: flex; align-items: center; gap: 10px; max-width: 320px;
+    animation: toast-in .2s ease; pointer-events: none;
+  }
+  .toast.toast-success { border-left: 3px solid var(--green); }
+  .toast.toast-error { border-left: 3px solid var(--red); }
+  .toast.toast-info { border-left: 3px solid var(--primary-light); }
+  .toast.toast-warning { border-left: 3px solid var(--amber); }
+  @keyframes toast-in { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes toast-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  /* ── Util ── */
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+  .text-muted { color: var(--text-muted); }
+  .font-mono { font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; }
+  .mt-1 { margin-top: 4px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+
+  /* ── Offboarding ── */
+  .offboard-steps { display: flex; gap: 0; margin-bottom: 24px; }
+  .ob-step { flex: 1; display: flex; align-items: center; gap: 0; }
+  .ob-step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: #e2e8f0; color: #94a3b8; border: 2px solid #e2e8f0; transition: background .2s, color .2s; }
+  .ob-step-dot.done { background: var(--green); color: white; border-color: var(--green); }
+  .ob-step-dot.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .ob-step-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: 8px; white-space: nowrap; }
+  .ob-step-label.active { color: var(--primary); }
+  .ob-step-label.done { color: var(--green); }
+  .ob-connector { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; }
+  .ob-connector.done { background: var(--green); }
+
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 24px;
+    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+    background: #fafafa;
+  }
+  .dropzone:hover, .dropzone.drag-over { border-color: var(--primary-light); background: #eff6ff; }
+  .dropzone svg { width: 36px; height: 36px; color: var(--text-muted); margin: 0 auto 12px; display: block; opacity: .5; }
+  .dropzone-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .dropzone-sub { font-size: 13px; color: var(--text-muted); }
+  .dropzone-file { margin-top: 10px; font-size: 12px; color: var(--primary); font-weight: 600; }
+  .dropzone-browse { color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+  .preview-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .preview-meta .pm-label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+
+  .ob-actions { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+
+  .result-summary { display: flex; gap: 14px; margin-bottom: 6px; }
+  .result-stat { flex: 1; border-radius: var(--radius); padding: 16px 18px; text-align: center; }
+  .result-stat.rs-success { background: var(--green-bg); }
+  .result-stat.rs-fail { background: var(--amber-bg); }
+  .rs-count { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .rs-success .rs-count { color: var(--green); }
+  .rs-fail .rs-count { color: var(--amber); }
+  .rs-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+
+  /* ── Danger zone ── */
+  .danger-zone { margin-top: 18px; padding-top: 16px; border-top: 2px dashed #fecaca; }
+  .danger-zone-label { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: .6px; display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+  .danger-zone-label svg { width: 13px; height: 13px; }
+  .danger-hint { font-size: 11px; color: var(--text-muted); margin-top: 7px; line-height: 1.45; }
+  .btn-nuclear { background: #7f1d1d; color: #fef2f2; border-color: #991b1b; width: 100%; justify-content: center; padding: 9px 14px; font-size: 13px; }
+  .btn-nuclear:hover { background: #991b1b; border-color: #b91c1c; }
+  .btn-nuclear svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ── Offboarded users panel ── */
+  .ob-user-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; transition: border-color .15s; }
+  .ob-user-card:last-child { margin-bottom: 0; }
+  .ob-user-card:hover { border-color: #cbd5e1; }
+  .ob-user-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .ob-user-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .ob-user-info { flex: 1; min-width: 0; }
+  .ob-user-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .ob-user-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .ob-user-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+
+  .timeline-wrap { margin: 10px 0 12px; }
+  .timeline-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+  .timeline-bar-bg { height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+  .timeline-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .timeline-bar-fill.within { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .timeline-bar-fill.over { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+  .snapshot-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .snapshot-meta strong { color: var(--text); }
+
+  .restore-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid #f1f5f9; }
+  .restore-item:last-child { border-bottom: none; }
+  .restore-item input[type=checkbox] { margin-top: 3px; flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); }
+  .restore-item-label { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .restore-item-sub { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── Agent view ── */
+  .agent-layout { display: flex; gap: 0; min-height: 600px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .agent-list { width: 270px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; background: #fafafa; }
+  .agent-list-search { padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fafafa; z-index: 1; }
+  .agent-list-search input { width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline: none; background: white; }
+  .agent-list-search input:focus { border-color: var(--primary-light); }
+  .agent-user-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 9px; transition: background .1s; }
+  .agent-user-item:hover { background: #f1f5f9; }
+  .agent-user-item.selected { background: #dbeafe; border-left: 3px solid var(--primary); padding-left: 9px; }
+  .agent-user-item .au-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .agent-user-item .au-name { font-size: 12.5px; font-weight: 600; }
+  .agent-user-item .au-sub { font-size: 11px; color: var(--text-muted); }
+  .agent-detail { flex: 1; overflow-y: auto; padding: 20px; background: white; }
+  .agent-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 13px; flex-direction: column; gap: 10px; }
+  .agent-empty svg { width: 36px; height: 36px; opacity: .25; }
+
+  .agent-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .agent-avatar-lg { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; flex-shrink: 0; }
+  .agent-header-info { flex: 1; }
+  .agent-header-name { font-size: 18px; font-weight: 800; }
+  .agent-header-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .agent-stats { display: flex; gap: 18px; margin-top: 6px; }
+  .agent-stat { font-size: 12px; color: var(--text-muted); }
+  .agent-stat strong { color: var(--text); font-weight: 700; }
+
+  .agent-block { margin-bottom: 20px; }
+  .agent-block-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .agent-block-title svg { width: 12px; height: 12px; }
+
+  .sys-card { border: 1px solid var(--border); border-radius: 6px; padding: 11px 13px; margin-bottom: 8px; }
+  .sys-card:last-child { margin-bottom: 0; }
+  .sys-card-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .sys-card-name { font-size: 13px; font-weight: 700; }
+  .sys-card-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .sys-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+  .risk-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; margin: 2px 3px 2px 0; }
+  .risk-chip.warn { background: #fef3c7; color: #92400e; }
+  .risk-chip.high { background: #fee2e2; color: #991b1b; }
+  .risk-chip.info { background: #dbeafe; color: #1e40af; }
+  .risk-chip svg { width: 10px; height: 10px; }
+
+  /* ── Disable button (separate from delete) ── */
+  .btn-disable { background: #78350f; color: #fef3c7; border-color: #92400e; }
+  .btn-disable:hover { background: #92400e; }
+
+  /* ── Ticket Distribution ── */
+  .td-upload-status { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 9px 12px; background: #f8fafc; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; flex-wrap: wrap; }
+  .td-col-error { background: var(--red-bg); color: var(--red); font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .td-sample-toggle { font-size: 12px; color: var(--primary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; user-select: none; }
+  .td-sample-toggle:hover { text-decoration: underline; }
+  .td-sample-table { margin-top: 10px; overflow-x: auto; }
+  .td-sample-table table { border-collapse: collapse; width: 100%; }
+  .td-sample-table th { background: #f8fafc; padding: 5px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border: 1px solid var(--border); white-space: nowrap; letter-spacing: .4px; }
+  .td-sample-table td { padding: 4px 8px; border: 1px solid #f1f5f9; font-size: 11px; white-space: nowrap; color: var(--text); }
+
+  .td-p1 td:first-child { border-left: 3px solid var(--red) !important; }
+  .td-p2 td:first-child { border-left: 3px solid var(--amber) !important; }
+  .td-p3 td:first-child { border-left: 3px solid var(--blue) !important; }
+  .td-p4 td:first-child { border-left: 3px solid #94a3b8 !important; }
+
+  .td-priority-bar { display: flex; gap: 7px; margin-bottom: 12px; flex-wrap: wrap; }
+  .td-priority-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .td-priority-pill.p1 { background: var(--red-bg); color: var(--red); }
+  .td-priority-pill.p2 { background: var(--amber-bg); color: var(--amber); }
+  .td-priority-pill.p3 { background: var(--blue-bg); color: var(--blue); }
+  .td-priority-pill.p4 { background: #f1f5f9; color: #64748b; }
+
+  .td-shift-pills { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .td-shift-pill { background: var(--blue-bg); color: var(--blue); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  .td-method-group { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+  .td-method-btn { flex: 1; padding: 10px 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); background: white; border: none; border-right: 1px solid var(--border); cursor: pointer; transition: background .15s, color .15s; text-align: center; }
+  .td-method-btn:last-child { border-right: none; }
+  .td-method-btn:hover { background: #f8fafc; color: var(--text); }
+  .td-method-btn.active { background: var(--primary); color: white; }
+  .td-method-desc { font-size: 12px; color: var(--text-muted); padding: 8px 12px; background: #f8fafc; border-radius: 6px; margin-bottom: 14px; line-height: 1.55; min-height: 38px; }
+
+  .td-distribute-btn { width: 100%; padding: 13px; font-size: 15px; font-weight: 700; border-radius: 8px; justify-content: center; }
+
+  .td-summary-bar { padding: 13px 18px; background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: white; border-radius: var(--radius); margin-bottom: 18px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .td-summary-bar svg { flex-shrink: 0; }
+
+  .td-agent-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .td-agent-card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .td-agent-card-header { padding: 12px 14px; background: #fafafa; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .td-agent-card-name { font-size: 13px; font-weight: 700; }
+  .td-agent-card-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .td-capacity-wrap { padding: 0 14px 10px; }
+  .td-capacity-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin: 8px 0 4px; }
+  .td-capacity-bar-bg { height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+  .td-capacity-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); transition: width .4s ease; }
+  .td-capacity-bar-fill.full { background: linear-gradient(90deg, var(--amber), #f59e0b); }
+  .td-ticket-list { padding: 0 14px 12px; }
+  .td-ticket-row { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid #f8fafc; font-size: 12px; min-width: 0; }
+  .td-ticket-row:last-child { border-bottom: none; }
+  .td-ticket-id { font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+  .td-ticket-summary { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .td-sla-badge { background: var(--red-bg); color: var(--red); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; border: 1px solid #fca5a5; flex-shrink: 0; }
+  .td-ticket-sla { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
+  .td-unassigned-box { border: 2px solid var(--amber); border-radius: var(--radius); padding: 16px 18px; background: var(--amber-bg); margin-top: 18px; }
+  .td-unassigned-title { font-size: 13px; font-weight: 700; color: #92400e; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+  .td-unassigned-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #fde68a; font-size: 12px; }
+  .td-unassigned-row:last-child { border-bottom: none; }
+
+  .td-export-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .td-reset-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <span>AccessOps</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Navigation</div>
+    <a class="nav-item active" onclick="setNav(this)" data-section="users">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Users
+    </a>
+    <a class="nav-item" onclick="setNav(this)" data-section="apps">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Applications
+    </a>
+    <a class="nav-item" onclick="setNav(this)" data-section="licenses">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Licenses
+    </a>
+    <div class="nav-label" style="margin-top:8px;">Governance</div>
+    <a class="nav-item" onclick="setNav(this)" data-section="requests">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      Requests
+    </a>
+    <a class="nav-item" onclick="setNav(this)" data-section="audit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Audit Log
+    </a>
+    <div class="nav-label" style="margin-top:8px;">Intelligence</div>
+    <a class="nav-item" onclick="setNav(this)" data-section="agent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Agent View
+    </a>
+    <div class="nav-label" style="margin-top:8px;">Actions</div>
+    <a class="nav-item" onclick="setNav(this)" data-section="offboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Bulk Offboarding
+    </a>
+    <a class="nav-item" onclick="setNav(this)" data-section="tickets">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Ticket Distribution
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="admin-avatar">JT</div>
+    <div class="admin-info">
+      <div class="admin-name">James Thornton</div>
+      <div class="admin-role">IT Administrator</div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div id="main">
+  <header id="header">
+    <div class="header-title" id="header-title">User Access Management</div>
+    <div class="header-actions">
+      <span class="header-badge">2 Pending Approvals</span>
+      <button class="btn btn-primary btn-sm" onclick="openAddAppModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Request
+      </button>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- Users section -->
+    <div id="section-users">
+      <!-- Search -->
+      <div class="search-wrap" style="margin-bottom:20px;">
+        <span class="search-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="user-search" placeholder="Search by name or email…" autocomplete="off" oninput="onSearch(this.value)" onfocus="showDropdown()" onblur="hideDropdown()">
+        <div id="search-dropdown"></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Profile card -->
+        <div class="card" id="profile-card">
+          <div class="card-header">
+            <span class="card-title">User Profile</span>
+            <span id="profile-status-badge"></span>
+          </div>
+          <div class="card-body">
+            <div id="profile-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+              <p style="font-size:13px;">Search for a user to view their access profile.</p>
+            </div>
+            <div id="profile-data" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Access tabs -->
+        <div class="card" id="access-card">
+          <div id="access-empty" style="padding:40px 18px;text-align:center;color:var(--text-muted);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;display:block;opacity:.3;"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <p style="font-size:13px;">Select a user to view their access details.</p>
+          </div>
+          <div id="access-data" style="display:none;">
+            <div class="tab-bar" id="access-tabs">
+              <button class="tab-btn active" onclick="switchTab('okta',this)">Okta</button>
+              <button class="tab-btn" onclick="switchTab('ad',this)">Active Directory</button>
+              <button class="tab-btn" onclick="switchTab('apps',this)">Application Access</button>
+              <button class="tab-btn" onclick="switchTab('licenses',this)">Licenses</button>
+            </div>
+            <div class="tab-panel active" id="tab-okta"></div>
+            <div class="tab-panel" id="tab-ad"></div>
+            <div class="tab-panel" id="tab-apps"></div>
+            <div class="tab-panel" id="tab-licenses"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending requests (collapsible) -->
+      <div class="card" id="pending-card">
+        <div class="collapsible-header" onclick="toggleCollapsible('pending-body','pending-icon')">
+          <div class="flex-center">
+            <span class="card-title">Pending Access Requests</span>
+            <span class="badge badge-amber">2</span>
+          </div>
+          <svg id="pending-icon" class="collapsible-icon open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        </div>
+        <div id="pending-body" class="collapsible-body"></div>
+      </div>
+    </div>
+
+    <!-- Applications section (global) -->
+    <div id="section-apps" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Application Access</span>
+          <button class="btn btn-primary btn-sm" onclick="openAddAppModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Grant Access
+          </button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap" id="global-apps-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Licenses section (global) -->
+    <div id="section-licenses" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">License Assignments</span>
+          <button class="btn btn-primary btn-sm" onclick="openAssignLicenseModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Assign License
+          </button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap" id="global-licenses-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Requests section -->
+    <div id="section-requests" style="display:none;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Access Request Queue</span></div>
+        <div class="card-body" id="requests-body"></div>
+      </div>
+    </div>
+
+    <!-- Audit log section -->
+    <div id="section-audit" style="display:none;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Audit Log</span></div>
+        <div class="card-body" id="audit-body"></div>
+      </div>
+    </div>
+
+    <!-- Bulk Offboarding section -->
+    <div id="section-offboard" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Bulk Offboarding</span>
+          <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download CSV Template
+          </button>
+        </div>
+        <div class="card-body">
+
+          <!-- Step indicator -->
+          <div class="offboard-steps" id="ob-steps">
+            <div class="ob-step">
+              <div class="ob-step-dot active" id="ob-dot-1">1</div>
+              <div class="ob-step-label active" id="ob-lbl-1">Upload CSV</div>
+            </div>
+            <div class="ob-connector" id="ob-con-1"></div>
+            <div class="ob-step">
+              <div class="ob-step-dot" id="ob-dot-2">2</div>
+              <div class="ob-step-label" id="ob-lbl-2">Review &amp; Confirm</div>
+            </div>
+            <div class="ob-connector" id="ob-con-2"></div>
+            <div class="ob-step">
+              <div class="ob-step-dot" id="ob-dot-3">3</div>
+              <div class="ob-step-label" id="ob-lbl-3">Results</div>
+            </div>
+          </div>
+
+          <!-- Step 1: Upload -->
+          <div id="offboard-step-upload">
+            <div class="dropzone" id="dropzone"
+              onclick="document.getElementById('csv-file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="event.preventDefault();this.classList.remove('drag-over');handleCsvUpload(event.dataTransfer.files[0])">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <div class="dropzone-title">Drop your CSV file here</div>
+              <div class="dropzone-sub">or <span class="dropzone-browse">browse to upload</span></div>
+              <div class="dropzone-file" id="dropzone-filename"></div>
+            </div>
+            <input type="file" id="csv-file-input" accept=".csv" style="display:none"
+              onchange="handleCsvUpload(this.files[0])">
+            <p style="margin-top:12px;font-size:12px;color:var(--text-muted);">
+              Required column: <strong>email</strong> (unique identifier). Optional: <strong>employee_id</strong>, <strong>reason</strong>, <strong>notes</strong>.
+              <a href="#" onclick="downloadTemplate();return false;" style="color:var(--primary);">Download the template</a> to get started.
+            </p>
+          </div>
+
+          <!-- Step 2: Preview -->
+          <div id="offboard-step-preview" style="display:none;">
+            <div class="preview-meta">
+              <span class="pm-label">File:</span>
+              <span id="offboard-file-info"></span>
+            </div>
+            <div class="table-wrap" id="offboard-preview-table"></div>
+            <div class="ob-actions">
+              <button class="btn btn-outline" onclick="resetOffboardUpload()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.29"/></svg>
+                Upload Different File
+              </button>
+              <button class="btn btn-danger" id="run-offboard-btn" onclick="confirmBulkOffboard()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
+                Run Bulk Offboard
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Results -->
+          <div id="offboard-step-results" style="display:none;">
+            <div id="offboard-results-body"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent View section -->
+    <div id="section-agent" style="display:none;">
+      <div class="card" style="overflow:hidden;">
+        <div class="card-header">
+          <span class="card-title">Agent View — Full Access Matrix</span>
+          <span style="font-size:12px;color:var(--text-muted);">All users · All systems · All accounts</span>
+        </div>
+        <div class="agent-layout">
+          <div class="agent-list">
+            <div class="agent-list-search">
+              <input type="text" placeholder="Filter users…" oninput="filterAgentList(this.value)" id="agent-search-input">
+            </div>
+            <div id="agent-user-list"></div>
+          </div>
+          <div class="agent-detail" id="agent-detail">
+            <div class="agent-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+              <span>Select a user to view their complete access across all systems</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ticket Distribution section -->
+    <div id="section-tickets" style="display:none;">
+      <!-- Zone 1: Upload -->
+      <div id="td-upload-zone">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <!-- Card A: Tickets CSV -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Upload Jira Tickets</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Export from MGW-Jira queue</div>
+              </div>
+              <span id="td-tickets-checkmark" style="display:none;color:var(--green);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="dropzone" id="td-tickets-dropzone"
+                onclick="document.getElementById('td-tickets-input').click()"
+                ondragover="event.preventDefault();this.classList.add('drag-over')"
+                ondragleave="this.classList.remove('drag-over')"
+                ondrop="event.preventDefault();this.classList.remove('drag-over');tdHandleTicketFile(event.dataTransfer.files[0])">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <div class="dropzone-title">Drop Tickets CSV here</div>
+                <div class="dropzone-sub">or <span class="dropzone-browse">browse to upload</span></div>
+              </div>
+              <input type="file" id="td-tickets-input" accept=".csv" style="display:none" onchange="tdHandleTicketFile(this.files[0])">
+              <div id="td-tickets-status" style="display:none;" class="td-upload-status"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                <a href="#" onclick="tdLoadSampleTickets();return false;" style="font-size:12px;color:var(--primary);">Load sample data</a>
+                <span class="td-sample-toggle" onclick="tdToggleSample('td-tickets-sample-box',this)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  View expected CSV format
+                </span>
+              </div>
+              <div id="td-tickets-sample-box" style="display:none;" class="td-sample-table">
+                <table>
+                  <thead><tr><th>TICKET_ID</th><th>SUMMARY</th><th>PRIORITY</th><th>CATEGORY</th><th>STATUS</th><th>CREATED_DATE</th><th>SLA_DUE</th></tr></thead>
+                  <tbody>
+                    <tr><td>MGW-1041</td><td>Unable to login to Okta SSO</td><td>P1 Critical</td><td>IAM</td><td>Open</td><td>2026-07-02</td><td>2026-07-02 14:00</td></tr>
+                    <tr><td>MGW-1042</td><td>VPN dropping intermittently</td><td>P2 High</td><td>Network</td><td>Open</td><td>2026-07-02</td><td>2026-07-02 18:00</td></tr>
+                    <tr><td>MGW-1043</td><td>Laptop screen flickering</td><td>P3 Medium</td><td>Hardware</td><td>Open</td><td>2026-07-02</td><td>2026-07-03 09:00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Card B: Agents CSV -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Upload Agent Roster</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Shift availability for today</div>
+              </div>
+              <span id="td-agents-checkmark" style="display:none;color:var(--green);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="dropzone" id="td-agents-dropzone"
+                onclick="document.getElementById('td-agents-input').click()"
+                ondragover="event.preventDefault();this.classList.add('drag-over')"
+                ondragleave="this.classList.remove('drag-over')"
+                ondrop="event.preventDefault();this.classList.remove('drag-over');tdHandleAgentFile(event.dataTransfer.files[0])">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <div class="dropzone-title">Drop Agents CSV here</div>
+                <div class="dropzone-sub">or <span class="dropzone-browse">browse to upload</span></div>
+              </div>
+              <input type="file" id="td-agents-input" accept=".csv" style="display:none" onchange="tdHandleAgentFile(this.files[0])">
+              <div id="td-agents-status" style="display:none;" class="td-upload-status"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                <a href="#" onclick="tdLoadSampleAgents();return false;" style="font-size:12px;color:var(--primary);">Load sample data</a>
+                <span class="td-sample-toggle" onclick="tdToggleSample('td-agents-sample-box',this)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  View expected CSV format
+                </span>
+              </div>
+              <div id="td-agents-sample-box" style="display:none;" class="td-sample-table">
+                <table>
+                  <thead><tr><th>AGENT_NAME</th><th>AGENT_ID</th><th>SHIFT</th><th>SHIFT_START</th><th>SHIFT_END</th><th>MAX_TICKETS</th><th>SPECIALIZATION</th></tr></thead>
+                  <tbody>
+                    <tr><td>Sarah Kim</td><td>AGT-001</td><td>Morning</td><td>06:00</td><td>14:00</td><td>10</td><td>IAM</td></tr>
+                    <tr><td>Marcus Webb</td><td>AGT-002</td><td>Afternoon</td><td>14:00</td><td>22:00</td><td>10</td><td>Network</td></tr>
+                    <tr><td>Priya Singh</td><td>AGT-003</td><td>Night</td><td>22:00</td><td>06:00</td><td>8</td><td>General</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone 2: Preview (hidden until both files loaded) -->
+      <div id="td-preview-zone" style="display:none;margin-top:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Tickets Preview</span>
+              <span id="td-tickets-count" class="badge badge-blue"></span>
+            </div>
+            <div class="card-body" style="padding-bottom:0;">
+              <div id="td-tickets-priority-bar" class="td-priority-bar"></div>
+            </div>
+            <div style="max-height:320px;overflow-y:auto;">
+              <div class="table-wrap" id="td-tickets-table"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Agent Roster Preview</span>
+              <span id="td-agents-count" class="badge badge-blue"></span>
+            </div>
+            <div class="card-body" style="padding-bottom:0;">
+              <div id="td-agents-shift-pills" class="td-shift-pills"></div>
+            </div>
+            <div style="max-height:320px;overflow-y:auto;">
+              <div class="table-wrap" id="td-agents-table"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone 3: Controls + Output (hidden until both files loaded) -->
+      <div id="td-controls-zone" style="display:none;margin-top:20px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Distribution Controls</span></div>
+          <div class="card-body">
+            <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Distribution Method</div>
+            <div class="td-method-group">
+              <button class="td-method-btn active" onclick="tdSelectMethod('smart',this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                Smart Routing
+              </button>
+              <button class="td-method-btn" onclick="tdSelectMethod('roundrobin',this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Round Robin
+              </button>
+              <button class="td-method-btn" onclick="tdSelectMethod('priority',this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Priority-First Balanced
+              </button>
+            </div>
+            <div class="td-method-desc" id="td-method-desc">Match ticket CATEGORY to agent SPECIALIZATION first, then distribute by lowest load. P1s always assigned first. Unmatched tickets fall back to General agents.</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+              <input type="checkbox" id="td-sla-flag" onchange="tdState.flagSla=this.checked" style="width:15px;height:15px;cursor:pointer;accent-color:var(--red);">
+              <label for="td-sla-flag" style="font-size:13px;font-weight:600;cursor:pointer;">Flag tickets breaching SLA in next 4 hours</label>
+              <span class="td-sla-badge" style="font-size:10px;">SLA BREACH</span>
+            </div>
+            <button class="btn btn-primary td-distribute-btn" id="td-distribute-btn" onclick="tdRunDistribution()" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Distribute Tickets
+            </button>
+          </div>
+        </div>
+
+        <div id="td-output-zone" style="display:none;margin-top:20px;">
+          <div id="td-summary-bar"></div>
+          <div id="td-agent-output" class="td-agent-cards"></div>
+          <div id="td-unassigned-zone"></div>
+          <div class="td-export-row">
+            <button class="btn btn-outline" onclick="tdDownloadSheet()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download distribution sheet
+            </button>
+            <button class="btn btn-outline" onclick="tdCopyJira()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Jira bulk-assign format
+            </button>
+            <button class="btn btn-outline" onclick="tdSendAria()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Send to ARIA
+            </button>
+          </div>
+          <div class="td-reset-row">
+            <button class="btn btn-outline btn-sm" onclick="tdStartOver()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.29"/></svg>
+              Start over
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="tdRerun()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
+              Re-run with different method
+            </button>
+            <span class="text-muted" style="font-size:12px;">Re-run keeps your uploaded files and lets you pick a different strategy.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <!-- Offboarded Users tracking card (always visible in offboard section) -->
+      <div class="card" id="offboarded-users-card" style="margin-top:20px;display:none;">
+        <div class="card-header">
+          <div class="flex-center">
+            <span class="card-title">Offboarded Users</span>
+            <span class="badge badge-red" id="offboarded-count-badge">0</span>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);">Rehire within 30 days · Disable &amp; Delete after 30 days</span>
+        </div>
+        <div class="card-body" id="offboarded-users-body"></div>
+      </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Modal overlay -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<!-- Confirm dialog overlay -->
+<div id="confirm-overlay">
+  <div class="confirm-dialog" id="confirm-box"></div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ── Mock data ──────────────────────────────────────────────────────────────────
+
+const USERS = {
+  alice: {
+    id: 'EMP-0042',
+    name: 'Alice Chen',
+    email: 'alice.chen@cotiviti.com',
+    department: 'Engineering',
+    title: 'Senior Software Engineer',
+    manager: 'David Park',
+    status: 'Active',
+    avatarColor: '#2563eb',
+    initials: 'AC',
+    okta: {
+      status: 'Active',
+      mfa: true,
+      mfaMethod: 'Okta Verify (TOTP)',
+      groups: ['engineering-all', 'github-users', 'jira-access', 'confluence-editors', 'vpn-split-tunnel'],
+      lastLogin: '2026-06-25 09:32 UTC',
+      userId: 'okta_achen_0042'
+    },
+    ad: {
+      domain: 'CORP.COTIVITI.COM',
+      groups: ['Domain Users', 'Engineering-All', 'VPN-Users', 'GitHub-Enterprise'],
+      ou: 'OU=Engineering,OU=Staff,DC=corp,DC=cotiviti,DC=com',
+      passwordExpiry: '2026-09-15',
+      accountEnabled: true
+    },
+    apps: [
+      { id: 'a1', name: 'GitHub Enterprise', role: 'Admin', granted: '2025-01-15', by: 'IT-Auto-Provisioning', status: 'Active' },
+      { id: 'a2', name: 'Jira', role: 'Developer', granted: '2025-01-15', by: 'IT-Auto-Provisioning', status: 'Active' },
+      { id: 'a3', name: 'Confluence', role: 'Editor', granted: '2025-02-01', by: 'Mike Johnson', status: 'Active' },
+      { id: 'a4', name: 'Datadog', role: 'Viewer', granted: '2025-03-10', by: 'Sarah Lee', status: 'Active' },
+      { id: 'a5', name: 'AWS Console', role: 'Developer', granted: '2025-04-20', by: 'DevOps Team', status: 'Active' }
+    ],
+    licenses: [
+      { id: 'l1', product: 'Microsoft 365', sku: 'E3', assigned: '2025-01-15', cost: '$22/mo' },
+      { id: 'l2', product: 'GitHub Enterprise', sku: 'Business', assigned: '2025-01-15', cost: '$19/mo' },
+      { id: 'l3', product: 'Zoom', sku: 'Pro', assigned: '2025-02-01', cost: '$15/mo' },
+      { id: 'l4', product: 'Datadog', sku: 'Pro', assigned: '2025-03-10', cost: '$23/mo' }
+    ],
+    adAccounts: [
+      { domain: 'CORP.COTIVITI.COM', samAccount: 'achen', groups: ['Domain Users','Engineering-All','VPN-Users','GitHub-Enterprise'], ou: 'OU=Engineering,OU=Staff,DC=corp,DC=cotiviti,DC=com', passwordExpiry: '2026-09-15', enabled: true },
+      { domain: 'DEV.COTIVITI.COM',  samAccount: 'achen-dev', groups: ['Dev-All','K8s-Admins','AWS-Dev-Access','CI-CD-Pipeline'], ou: 'OU=Engineers,DC=dev,DC=cotiviti,DC=com', passwordExpiry: '2026-08-10', enabled: true }
+    ],
+    externalAccounts: [
+      { system: 'AWS IAM', accountId: 'achen@cotiviti-prod', role: 'Developer', detail: 'us-east-1 · 3 inline policies', status: 'Active' },
+      { system: 'GitHub.com', accountId: '@alice-chen-cotiviti', role: 'Org Member', detail: '12 repos with write access', status: 'Active' },
+      { system: 'VPN (Cisco AnyConnect)', accountId: 'achen', role: 'Split-tunnel', detail: 'CORP profile', status: 'Active' },
+      { system: 'Datadog', accountId: 'alice.chen@cotiviti.com', role: 'Viewer', detail: 'Engineering dashboard access', status: 'Active' }
+    ]
+  },
+  marcus: {
+    id: 'EMP-0117',
+    name: 'Marcus Obi',
+    email: 'marcus.obi@cotiviti.com',
+    department: 'People & Culture',
+    title: 'HR Analyst',
+    manager: 'Priya Nair',
+    status: 'Suspended',
+    avatarColor: '#9333ea',
+    initials: 'MO',
+    okta: {
+      status: 'Suspended',
+      mfa: true,
+      mfaMethod: 'Okta Verify (Push)',
+      groups: ['hr-all', 'bamboohr-users', 'workday-viewers'],
+      lastLogin: '2026-05-10 14:15 UTC',
+      userId: 'okta_mobi_0117'
+    },
+    ad: {
+      domain: 'CORP.COTIVITI.COM',
+      groups: ['Domain Users', 'HR-All', 'Workday-Viewers'],
+      ou: 'OU=HR,OU=Staff,DC=corp,DC=cotiviti,DC=com',
+      passwordExpiry: '2026-08-01',
+      accountEnabled: false
+    },
+    apps: [
+      { id: 'b1', name: 'BambooHR', role: 'HR Admin', granted: '2024-08-01', by: 'IT-Auto-Provisioning', status: 'Revoked' },
+      { id: 'b2', name: 'Microsoft 365', role: 'User', granted: '2024-08-01', by: 'IT-Auto-Provisioning', status: 'Revoked' },
+      { id: 'b3', name: 'Workday', role: 'Viewer', granted: '2024-09-15', by: 'Priya Nair', status: 'Revoked' }
+    ],
+    licenses: [],
+    adAccounts: [
+      { domain: 'CORP.COTIVITI.COM', samAccount: 'mobi', groups: ['Domain Users','HR-All','Workday-Viewers'], ou: 'OU=HR,OU=Staff,DC=corp,DC=cotiviti,DC=com', passwordExpiry: '2026-08-01', enabled: false }
+    ],
+    externalAccounts: [
+      { system: 'BambooHR', accountId: 'marcus.obi@cotiviti.com', role: 'HR Admin', detail: 'Full HRIS access', status: 'Suspended' },
+      { system: 'Workday', accountId: 'mobi-0117', role: 'Viewer', detail: 'Read-only payroll', status: 'Suspended' }
+    ],
+    offboarded: true,
+    offboardStatus: 'Offboarded',
+    offboardReason: 'Contract End',
+    offboardedAt: (() => { const d = new Date(); d.setDate(d.getDate() - 35); return d.toISOString(); })(),
+    snapshot: {
+      apps: [
+        { id: 'b1', name: 'BambooHR', role: 'HR Admin', granted: '2024-08-01', by: 'IT-Auto-Provisioning', status: 'Active' },
+        { id: 'b2', name: 'Microsoft 365', role: 'User', granted: '2024-08-01', by: 'IT-Auto-Provisioning', status: 'Active' },
+        { id: 'b3', name: 'Workday', role: 'Viewer', granted: '2024-09-15', by: 'Priya Nair', status: 'Active' }
+      ],
+      licenses: [
+        { id: 'm1', product: 'Microsoft 365', sku: 'E1', assigned: '2024-08-01', cost: '$12/mo' },
+        { id: 'm2', product: 'Zoom', sku: 'Basic', assigned: '2024-08-01', cost: '$0/mo' }
+      ],
+      oktaStatus: 'Active',
+      oktaGroups: ['hr-all', 'bamboohr-users', 'workday-viewers'],
+      adEnabled: true,
+      adGroups: ['Domain Users', 'HR-All', 'Workday-Viewers']
+    }
+  },
+  jordan: {
+    id: 'EMP-0203',
+    name: 'Jordan Kim',
+    email: 'jordan.kim@cotiviti.com',
+    department: 'Finance',
+    title: 'Financial Analyst',
+    manager: 'Sarah Wong',
+    status: 'Suspended',
+    avatarColor: '#0891b2',
+    initials: 'JK',
+    okta: {
+      status: 'Suspended',
+      mfa: true,
+      mfaMethod: 'Okta Verify (TOTP)',
+      groups: [],
+      lastLogin: '2026-06-21 16:00 UTC',
+      userId: 'okta_jkim_0203'
+    },
+    ad: {
+      domain: 'CORP.COTIVITI.COM',
+      groups: [],
+      ou: 'OU=Finance,OU=Staff,DC=corp,DC=cotiviti,DC=com',
+      passwordExpiry: '2026-10-01',
+      accountEnabled: false
+    },
+    apps: [
+      { id: 'j1', name: 'Salesforce', role: 'Analyst', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Revoked' },
+      { id: 'j2', name: 'Tableau', role: 'Viewer', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Revoked' },
+      { id: 'j3', name: 'Microsoft 365', role: 'User', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Revoked' }
+    ],
+    licenses: [],
+    adAccounts: [
+      { domain: 'CORP.COTIVITI.COM', samAccount: 'jkim', groups: ['Domain Users','Finance-All','Salesforce-Analysts'], ou: 'OU=Finance,OU=Staff,DC=corp,DC=cotiviti,DC=com', passwordExpiry: '2026-10-01', enabled: false },
+      { domain: 'FINOPS.COTIVITI.COM', samAccount: 'jordan.kim', groups: ['FinOps-ReadOnly','Tableau-Users'], ou: 'OU=Analysts,DC=finops,DC=cotiviti,DC=com', passwordExpiry: '2026-10-01', enabled: false }
+    ],
+    externalAccounts: [
+      { system: 'Salesforce', accountId: 'jordan.kim@cotiviti.com', role: 'Analyst', detail: 'Finance Cloud · 4 reports access', status: 'Suspended' },
+      { system: 'Tableau Server', accountId: 'jkim', role: 'Viewer', detail: '7 dashboards subscribed', status: 'Suspended' },
+      { system: 'NetSuite', accountId: 'jkim-0203', role: 'AP Viewer', detail: 'Accounts Payable module', status: 'Suspended' }
+    ],
+    offboarded: true,
+    offboardStatus: 'Offboarded',
+    offboardReason: 'Voluntary Resignation',
+    offboardedAt: (() => { const d = new Date(); d.setDate(d.getDate() - 5); return d.toISOString(); })(),
+    snapshot: {
+      apps: [
+        { id: 'j1', name: 'Salesforce', role: 'Analyst', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Active' },
+        { id: 'j2', name: 'Tableau', role: 'Viewer', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Active' },
+        { id: 'j3', name: 'Microsoft 365', role: 'User', granted: '2024-11-01', by: 'IT-Auto-Provisioning', status: 'Active' }
+      ],
+      licenses: [
+        { id: 'jl1', product: 'Microsoft 365', sku: 'E3', assigned: '2024-11-01', cost: '$22/mo' },
+        { id: 'jl2', product: 'Zoom', sku: 'Pro', assigned: '2024-11-01', cost: '$15/mo' },
+        { id: 'jl3', product: 'Tableau', sku: 'Creator', assigned: '2024-11-01', cost: '$35/mo' }
+      ],
+      oktaStatus: 'Active',
+      oktaGroups: ['finance-all', 'tableau-users', 'sfdc-analysts'],
+      adEnabled: true,
+      adGroups: ['Domain Users', 'Finance-All', 'Salesforce-Analysts']
+    }
+  }
+};
+
+const PENDING_REQUESTS = [
+  { id: 'REQ-2026-0391', user: 'Alice Chen', type: 'Application Access', resource: 'Snowflake (Data Analyst role)', submitted: '2026-06-24', priority: 'Normal', approver: 'David Park' },
+  { id: 'REQ-2026-0392', user: 'Marcus Obi', type: 'Account Reactivation', resource: 'Okta + Active Directory', submitted: '2026-06-25', priority: 'High', approver: 'IT Administrator' }
+];
+
+const AUDIT_LOG = [
+  { ts: '2026-06-26 08:14', action: 'Suspended Okta account for Marcus Obi (EMP-0117)', by: 'James Thornton (IT Admin)', color: '#dc2626' },
+  { ts: '2026-06-25 16:45', action: 'Approved Datadog Viewer access for Alice Chen', by: 'Sarah Lee (Team Lead)', color: '#16a34a' },
+  { ts: '2026-06-25 11:02', action: 'Auto-provisioned GitHub Enterprise for Alice Chen', by: 'IT-Auto-Provisioning', color: '#2563eb' },
+  { ts: '2026-06-24 14:30', action: 'Access request REQ-2026-0391 submitted by Alice Chen', by: 'Alice Chen', color: '#d97706' },
+  { ts: '2026-06-23 09:00', action: 'Password reset initiated for Alice Chen', by: 'James Thornton (IT Admin)', color: '#7c3aed' },
+  { ts: '2026-06-20 15:22', action: 'Assigned Microsoft 365 E1 license to Marcus Obi', by: 'IT-Auto-Provisioning', color: '#16a34a' },
+  { ts: '2026-06-18 10:05', action: 'Revoked Slack (Standard) access for Marcus Obi', by: 'James Thornton (IT Admin)', color: '#dc2626' },
+  { ts: '2026-06-15 13:40', action: 'MFA re-enrollment completed for Alice Chen', by: 'Alice Chen', color: '#2563eb' }
+];
+
+// ── State ──────────────────────────────────────────────────────────────────────
+
+let currentUser = null;
+let currentSection = 'users';
+let pendingRequests = [...PENDING_REQUESTS];
+let auditLog = [...AUDIT_LOG];
+let confirmCallback = null;
+
+// ── Navigation ─────────────────────────────────────────────────────────────────
+
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const section = el.dataset.section;
+  currentSection = section;
+
+  const titles = { users: 'User Access Management', apps: 'Application Access', licenses: 'License Management', requests: 'Access Requests', audit: 'Audit Log', agent: 'Agent View', offboard: 'Bulk Offboarding', tickets: 'Ticket Distribution' };
+  document.getElementById('header-title').textContent = titles[section] || section;
+
+  ['users','apps','licenses','requests','audit','agent','offboard','tickets'].forEach(s => {
+    const el = document.getElementById('section-' + s);
+    if (el) el.style.display = s === section ? '' : 'none';
+  });
+
+  if (section === 'apps') renderGlobalApps();
+  if (section === 'licenses') renderGlobalLicenses();
+  if (section === 'requests') renderRequestsSection();
+  if (section === 'audit') renderAuditSection();
+  if (section === 'agent') renderAgentView();
+  if (section === 'offboard') {
+    document.getElementById('offboarded-users-card').style.display = '';
+    renderOffboardedUsers();
+  } else {
+    const card = document.getElementById('offboarded-users-card');
+    if (card) card.style.display = 'none';
+  }
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────────
+
+function activeUsers() {
+  return Object.values(USERS).filter(u => !u.deleted);
+}
+
+function onSearch(val) {
+  const q = val.toLowerCase().trim();
+  const pool = activeUsers();
+  const matches = q ? pool.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) : pool;
+  renderDropdown(matches);
+}
+
+function renderDropdown(users) {
+  const dd = document.getElementById('search-dropdown');
+  dd.innerHTML = users.map(u => `
+    <div class="search-result-item" onmousedown="selectUser('${Object.keys(USERS).find(k => USERS[k] === u && !u.deleted)}')">
+      <div class="sr-avatar" style="background:${u.avatarColor}20;color:${u.avatarColor};">${u.initials}</div>
+      <div class="sr-info">
+        <div class="sr-name">${u.name}</div>
+        <div class="sr-email">${u.email}</div>
+      </div>
+      ${statusBadge(u.status)}
+    </div>
+  `).join('');
+  dd.classList.toggle('open', users.length > 0);
+}
+
+function showDropdown() {
+  onSearch(document.getElementById('user-search').value);
+}
+function hideDropdown() {
+  setTimeout(() => document.getElementById('search-dropdown').classList.remove('open'), 150);
+}
+
+function selectUser(key) {
+  currentUser = key;
+  const u = USERS[key];
+  document.getElementById('user-search').value = u.name;
+  document.getElementById('search-dropdown').classList.remove('open');
+  renderProfile(u);
+  renderAccessTabs(u);
+}
+
+// ── Profile ────────────────────────────────────────────────────────────────────
+
+function renderProfile(u) {
+  document.getElementById('profile-empty').style.display = 'none';
+  document.getElementById('profile-data').style.display = '';
+  document.getElementById('profile-status-badge').innerHTML = statusBadge(u.status);
+
+  document.getElementById('profile-data').innerHTML = `
+    <div class="profile-top">
+      <div class="profile-avatar" style="background:${u.avatarColor}20;color:${u.avatarColor};">${u.initials}</div>
+      <div>
+        <div class="profile-name">${u.name}</div>
+        <div class="profile-title">${u.title}</div>
+      </div>
+    </div>
+    <div class="profile-rows">
+      <div class="profile-row"><span class="pr-label">Employee ID</span><span class="pr-val font-mono">${u.id}</span></div>
+      <div class="profile-row"><span class="pr-label">Department</span><span class="pr-val">${u.department}</span></div>
+      <div class="profile-row"><span class="pr-label">Email</span><span class="pr-val" style="font-size:12px;">${u.email}</span></div>
+      <div class="profile-row"><span class="pr-label">Manager</span><span class="pr-val">${u.manager}</span></div>
+      <div class="profile-row"><span class="pr-label">Okta Status</span><span class="pr-val">${statusBadge(u.okta.status)}</span></div>
+      <div class="profile-row"><span class="pr-label">AD Account</span><span class="pr-val">${u.ad.accountEnabled ? '<span class="badge badge-green">Enabled</span>' : '<span class="badge badge-red">Disabled</span>'}</span></div>
+      <div class="profile-row"><span class="pr-label">Apps Granted</span><span class="pr-val">${u.apps.filter(a=>a.status==='Active').length} active</span></div>
+      <div class="profile-row"><span class="pr-label">Licenses</span><span class="pr-val">${u.licenses.length} assigned</span></div>
+    </div>
+    <div class="danger-zone">
+      <div class="danger-zone-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Emergency Actions
+      </div>
+      <button class="btn btn-nuclear" onclick="wipeUserAccess('${currentUser}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        Wipe All Access &amp; Restart Machine
+      </button>
+      <p class="danger-hint">Revokes all apps &amp; licenses, suspends Okta &amp; AD, sends remote restart to device. Fully logged.</p>
+    </div>
+  `;
+}
+
+// ── Access tabs ────────────────────────────────────────────────────────────────
+
+function renderAccessTabs(u) {
+  document.getElementById('access-empty').style.display = 'none';
+  document.getElementById('access-data').style.display = '';
+  renderOktaTab(u);
+  renderADTab(u);
+  renderAppsTab(u);
+  renderLicensesTab(u);
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function renderOktaTab(u) {
+  const o = u.okta;
+  const isSuspended = o.status === 'Suspended';
+  document.getElementById('tab-okta').innerHTML = `
+    <div class="info-grid" style="margin-bottom:16px;">
+      <div class="info-item"><div class="ii-label">SSO Status</div><div class="ii-val">${statusBadge(o.status)}</div></div>
+      <div class="info-item"><div class="ii-label">MFA Enrolled</div><div class="ii-val">${o.mfa ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-red">No</span>'}</div></div>
+      <div class="info-item"><div class="ii-label">MFA Method</div><div class="ii-val">${o.mfaMethod}</div></div>
+      <div class="info-item"><div class="ii-label">Last Login</div><div class="ii-val" style="font-size:12px;">${o.lastLogin}</div></div>
+      <div class="info-item" style="grid-column:1/-1;"><div class="ii-label">User ID</div><div class="ii-val font-mono">${o.userId}</div></div>
+    </div>
+    <div class="ii-label" style="margin-bottom:8px;">Assigned Groups</div>
+    <div class="tags">${o.groups.map(g => `<span class="tag">${g}</span>`).join('')}</div>
+    <div class="action-bar">
+      ${isSuspended
+        ? `<button class="btn btn-success" onclick="confirmAction('Reactivate Okta account for ${u.name}?','This will restore SSO access and allow the user to log in.','success',() => reactivateOkta('${currentUser}'))">Reactivate Account</button>`
+        : `<button class="btn btn-danger" onclick="confirmAction('Suspend Okta account for ${u.name}?','This will immediately block SSO access for this user.','danger',() => suspendOkta('${currentUser}'))">Suspend Account</button>`
+      }
+      <button class="btn btn-outline" onclick="confirmAction('Force MFA reset for ${u.name}?','The user will be prompted to re-enroll their MFA device on next login.','info',() => {toast('MFA reset sent to '+USERS['${currentUser}'].name,'success');addAudit('MFA reset triggered for '+USERS['${currentUser}'].name);})">Reset MFA</button>
+    </div>
+  `;
+}
+
+function renderADTab(u) {
+  const a = u.ad;
+  document.getElementById('tab-ad').innerHTML = `
+    <div class="info-grid" style="margin-bottom:16px;">
+      <div class="info-item"><div class="ii-label">Domain</div><div class="ii-val font-mono">${a.domain}</div></div>
+      <div class="info-item"><div class="ii-label">Account</div><div class="ii-val">${a.accountEnabled ? '<span class="badge badge-green">Enabled</span>' : '<span class="badge badge-red">Disabled</span>'}</div></div>
+      <div class="info-item" style="grid-column:1/-1;"><div class="ii-label">OU Path</div><div class="ii-val font-mono" style="font-size:11px;word-break:break-all;">${a.ou}</div></div>
+      <div class="info-item"><div class="ii-label">Password Expiry</div><div class="ii-val">${a.passwordExpiry}</div></div>
+    </div>
+    <div class="ii-label" style="margin-bottom:8px;">Security Groups</div>
+    <div class="tags">${a.groups.map(g => `<span class="tag">${g}</span>`).join('')}</div>
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="confirmAction('Reset AD password for ${u.name}?','A temporary password will be generated and sent to their manager.','info',() => {toast('Password reset link sent to ${u.manager}','success');addAudit('AD password reset initiated for ${u.name}');})">
+        Reset Password
+      </button>
+      <button class="btn btn-outline" onclick="confirmAction('${a.accountEnabled ? 'Disable' : 'Enable'} AD account for ${u.name}?','','${a.accountEnabled?'danger':'success'}',() => toggleAD('${currentUser}'))">
+        ${a.accountEnabled ? 'Disable Account' : 'Enable Account'}
+      </button>
+    </div>
+  `;
+}
+
+function renderAppsTab(u) {
+  const activeApps = u.apps.filter(a => a.status === 'Active');
+  const revokedApps = u.apps.filter(a => a.status === 'Revoked');
+  const rows = u.apps.map(a => `
+    <tr>
+      <td><strong>${a.name}</strong></td>
+      <td><span class="badge badge-blue">${a.role}</span></td>
+      <td>${a.granted}</td>
+      <td>${a.by}</td>
+      <td>${a.status === 'Active' ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Revoked</span>'}</td>
+      <td>
+        ${a.status === 'Active'
+          ? `<button class="btn btn-danger btn-xs" onclick="confirmAction('Revoke ${a.name} access for ${u.name}?','The user will immediately lose access to this application.','danger',() => revokeApp('${currentUser}','${a.id}'))">Revoke</button>`
+          : `<button class="btn btn-outline btn-xs" onclick="confirmAction('Restore ${a.name} access for ${u.name}?','','success',() => restoreApp('${currentUser}','${a.id}'))">Restore</button>`
+        }
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('tab-apps').innerHTML = `
+    <div class="section-header">
+      <span class="section-title">${activeApps.length} Active · ${revokedApps.length} Revoked</span>
+      <button class="btn btn-primary btn-sm" onclick="openAddAppModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Application
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Application</th><th>Role</th><th>Date Granted</th><th>Granted By</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderLicensesTab(u) {
+  const rows = u.licenses.map(l => `
+    <tr>
+      <td><strong>${l.product}</strong></td>
+      <td><span class="tag">${l.sku}</span></td>
+      <td>${l.assigned}</td>
+      <td>${l.cost}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="confirmAction('Unassign ${l.product} license from ${u.name}?','The license will be returned to the available pool.','danger',() => unassignLicense('${currentUser}','${l.id}'))">Unassign</button></td>
+    </tr>
+  `).join('');
+
+  const total = u.licenses.reduce((sum, l) => {
+    const n = parseFloat(l.cost.replace(/[^0-9.]/g,'')) || 0;
+    return sum + n;
+  }, 0);
+
+  document.getElementById('tab-licenses').innerHTML = `
+    <div class="section-header">
+      <span class="section-title">${u.licenses.length} Licenses · $${total}/mo total</span>
+      <button class="btn btn-primary btn-sm" onclick="openAssignLicenseModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Assign License
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>SKU / Plan</th><th>Assigned Date</th><th>Cost</th><th>Action</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" class="empty-state" style="padding:24px;color:var(--text-muted);">No licenses assigned</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Pending requests ───────────────────────────────────────────────────────────
+
+function renderPendingRequests() {
+  const body = document.getElementById('pending-body');
+  if (!pendingRequests.length) {
+    body.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:0 0 4px;">No pending requests.</p>';
+    return;
+  }
+  body.innerHTML = pendingRequests.map((r, i) => `
+    <div class="req-card">
+      <div class="req-info">
+        <div class="req-title">${r.user} — ${r.type}</div>
+        <div class="req-meta">${r.id} · Submitted ${r.submitted} · Approver: ${r.approver}</div>
+        <div class="req-meta" style="margin-top:4px;"><span class="badge ${r.priority === 'High' ? 'badge-red' : 'badge-blue'}" style="font-size:10px;">${r.priority} Priority</span>&nbsp;<strong>${r.resource}</strong></div>
+      </div>
+      <div class="req-actions">
+        <button class="btn btn-success btn-sm" onclick="approveRequest(${i})">Approve</button>
+        <button class="btn btn-outline btn-sm" onclick="denyRequest(${i})">Deny</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function approveRequest(i) {
+  const r = pendingRequests[i];
+  confirmAction(`Approve request ${r.id}?`, `Grant ${r.user} access to: ${r.resource}`, 'success', () => {
+    addAudit(`Approved request ${r.id}: ${r.resource} for ${r.user}`);
+    pendingRequests.splice(i, 1);
+    updatePendingBadge();
+    renderPendingRequests();
+    if (document.getElementById('requests-body')) renderRequestsSection();
+    toast(`Request ${r.id} approved`, 'success');
+  });
+}
+
+function denyRequest(i) {
+  const r = pendingRequests[i];
+  confirmAction(`Deny request ${r.id}?`, `Reject ${r.user}'s request for: ${r.resource}`, 'danger', () => {
+    addAudit(`Denied request ${r.id}: ${r.resource} for ${r.user}`);
+    pendingRequests.splice(i, 1);
+    updatePendingBadge();
+    renderPendingRequests();
+    if (document.getElementById('requests-body')) renderRequestsSection();
+    toast(`Request ${r.id} denied`, 'error');
+  });
+}
+
+function updatePendingBadge() {
+  document.querySelector('.header-badge').textContent = `${pendingRequests.length} Pending Approval${pendingRequests.length !== 1 ? 's' : ''}`;
+}
+
+// ── Global section renders ──────────────────────────────────────────────────────
+
+function renderGlobalApps() {
+  const allApps = Object.entries(USERS).flatMap(([k,u]) =>
+    u.apps.map(a => ({ ...a, userName: u.name, userId: k }))
+  );
+  const rows = allApps.map(a => `
+    <tr>
+      <td><strong>${a.userName}</strong></td>
+      <td>${a.name}</td>
+      <td><span class="badge badge-blue">${a.role}</span></td>
+      <td>${a.granted}</td>
+      <td>${a.by}</td>
+      <td>${a.status === 'Active' ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Revoked</span>'}</td>
+      <td>${a.status === 'Active' ? `<button class="btn btn-danger btn-xs" onclick="confirmAction('Revoke ${a.name} access for ${a.userName}?','','danger',() => {revokeApp('${a.userId}','${a.id}');renderGlobalApps();})">Revoke</button>` : ''}</td>
+    </tr>
+  `).join('');
+  document.getElementById('global-apps-table').innerHTML = `
+    <table><thead><tr><th>User</th><th>Application</th><th>Role</th><th>Date Granted</th><th>Granted By</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  `;
+}
+
+function renderGlobalLicenses() {
+  const allLic = Object.entries(USERS).flatMap(([k,u]) =>
+    u.licenses.map(l => ({ ...l, userName: u.name, userId: k }))
+  );
+  const rows = allLic.map(l => `
+    <tr>
+      <td><strong>${l.userName}</strong></td>
+      <td>${l.product}</td>
+      <td><span class="tag">${l.sku}</span></td>
+      <td>${l.assigned}</td>
+      <td>${l.cost}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="confirmAction('Unassign ${l.product} from ${l.userName}?','','danger',() => {unassignLicense('${l.userId}','${l.id}');renderGlobalLicenses();})">Unassign</button></td>
+    </tr>
+  `).join('');
+  document.getElementById('global-licenses-table').innerHTML = `
+    <table><thead><tr><th>User</th><th>Product</th><th>SKU</th><th>Assigned</th><th>Cost</th><th>Action</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  `;
+}
+
+function renderRequestsSection() {
+  const body = document.getElementById('requests-body');
+  if (!pendingRequests.length) {
+    body.innerHTML = '<div class="empty-state"><p style="font-size:13px;">No pending requests. All caught up!</p></div>';
+    return;
+  }
+  body.innerHTML = pendingRequests.map((r, i) => `
+    <div class="req-card">
+      <div class="req-info">
+        <div class="req-title">${r.user} — ${r.type}</div>
+        <div class="req-meta">${r.id} · Submitted ${r.submitted} · Approver: ${r.approver}</div>
+        <div class="req-meta" style="margin-top:4px;"><span class="badge ${r.priority === 'High' ? 'badge-red' : 'badge-blue'}" style="font-size:10px;">${r.priority} Priority</span>&nbsp;<strong>${r.resource}</strong></div>
+      </div>
+      <div class="req-actions">
+        <button class="btn btn-success btn-sm" onclick="approveRequest(${i})">Approve</button>
+        <button class="btn btn-outline btn-sm" onclick="denyRequest(${i})">Deny</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAuditSection() {
+  document.getElementById('audit-body').innerHTML = auditLog.map(e => `
+    <div class="audit-entry">
+      <div class="audit-dot" style="background:${e.color};margin-top:5px;"></div>
+      <div style="flex:1;">
+        <div class="audit-action">${e.action}</div>
+        <div class="audit-by">By ${e.by}</div>
+      </div>
+      <div class="audit-time">${e.ts}</div>
+    </div>
+  `).join('');
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────────
+
+function suspendOkta(key) {
+  const u = USERS[key];
+  u.okta.status = 'Suspended';
+  toast(`${u.name}'s Okta account suspended`, 'error');
+  addAudit(`Suspended Okta account for ${u.name}`);
+  renderProfile(u);
+  renderOktaTab(u);
+}
+
+function reactivateOkta(key) {
+  const u = USERS[key];
+  u.okta.status = 'Active';
+  u.status = 'Active';
+  toast(`${u.name}'s Okta account reactivated`, 'success');
+  addAudit(`Reactivated Okta account for ${u.name}`);
+  renderProfile(u);
+  renderOktaTab(u);
+}
+
+function toggleAD(key) {
+  const u = USERS[key];
+  u.ad.accountEnabled = !u.ad.accountEnabled;
+  const action = u.ad.accountEnabled ? 'enabled' : 'disabled';
+  toast(`AD account ${action} for ${u.name}`, u.ad.accountEnabled ? 'success' : 'error');
+  addAudit(`AD account ${action} for ${u.name}`);
+  renderProfile(u);
+  renderADTab(u);
+}
+
+function revokeApp(key, appId) {
+  const u = USERS[key];
+  const app = u.apps.find(a => a.id === appId);
+  if (!app) return;
+  app.status = 'Revoked';
+  toast(`Revoked ${app.name} access for ${u.name}`, 'error');
+  addAudit(`Revoked ${app.name} (${app.role}) access for ${u.name}`);
+  if (currentUser === key) renderAppsTab(u);
+}
+
+function restoreApp(key, appId) {
+  const u = USERS[key];
+  const app = u.apps.find(a => a.id === appId);
+  if (!app) return;
+  app.status = 'Active';
+  toast(`Restored ${app.name} access for ${u.name}`, 'success');
+  addAudit(`Restored ${app.name} access for ${u.name}`);
+  if (currentUser === key) renderAppsTab(u);
+}
+
+function unassignLicense(key, licId) {
+  const u = USERS[key];
+  const idx = u.licenses.findIndex(l => l.id === licId);
+  if (idx === -1) return;
+  const lic = u.licenses[idx];
+  u.licenses.splice(idx, 1);
+  toast(`Unassigned ${lic.product} from ${u.name}`, 'warning');
+  addAudit(`Unassigned ${lic.product} (${lic.sku}) license from ${u.name}`);
+  if (currentUser === key) renderLicensesTab(u);
+}
+
+// ── Emergency wipe ─────────────────────────────────────────────────────────────
+
+function wipeUserAccess(key) {
+  const u = USERS[key];
+  const activeApps = u.apps.filter(a => a.status === 'Active').length;
+  const licCount = u.licenses.length;
+  confirmAction(
+    `Emergency Wipe — ${u.name}`,
+    `This will immediately:<br>
+     &nbsp;• Revoke <strong>${activeApps} application access(es)</strong><br>
+     &nbsp;• Unassign <strong>${licCount} license(s)</strong><br>
+     &nbsp;• Suspend Okta &amp; disable AD account<br>
+     &nbsp;• Send remote restart to their device<br><br>
+     This action is logged and <strong>cannot be undone automatically</strong>.`,
+    'danger',
+    () => executeWipe(key)
+  );
+}
+
+function executeWipe(key) {
+  const u = USERS[key];
+  const hostname = 'LAPTOP-' + u.initials + '-' + u.id.replace('EMP-', '');
+
+  captureOffboardSnapshot(u, 'Emergency Wipe');
+
+  const activeApps = u.apps.filter(a => a.status === 'Active');
+  activeApps.forEach(a => { a.status = 'Revoked'; });
+
+  const removedLicenses = u.licenses.splice(0);
+
+  u.okta.status = 'Suspended';
+  u.status = 'Suspended';
+  u.ad.accountEnabled = false;
+
+  addAudit(
+    `EMERGENCY WIPE: ${u.name} — ${activeApps.length} apps revoked, ` +
+    `${removedLicenses.length} licenses removed, Okta suspended, AD disabled, ` +
+    `remote restart sent to ${hostname}`
+  );
+
+  if (currentUser === key) {
+    renderProfile(u);
+    renderAccessTabs(u);
+  }
+
+  simulateWipeSequence(u.name, hostname, activeApps.length, removedLicenses.length);
+}
+
+function simulateWipeSequence(name, hostname, appCount, licCount) {
+  const steps = [
+    [0,    `Revoking ${appCount} application access(es) for ${name}…`, 'warning'],
+    [900,  `Suspending Okta account & disabling AD…`, 'warning'],
+    [1800, `Unassigning ${licCount} license(s)…`, 'warning'],
+    [2700, `Sending remote restart command to ${hostname}…`, 'info'],
+    [3700, `${hostname} — restart command acknowledged`, 'info'],
+    [4700, `Emergency wipe complete for ${name}`, 'error']
+  ];
+  steps.forEach(([delay, msg, type]) => setTimeout(() => toast(msg, type), delay));
+}
+
+// ── Modals ─────────────────────────────────────────────────────────────────────
+
+const ALL_APPS = ['AWS Console','BambooHR','Confluence','Datadog','GitHub Enterprise','Jira','Salesforce','ServiceNow','Slack','Snowflake','Tableau','Workday'];
+
+function openAddAppModal() {
+  const roleOptions = ['Admin','Developer','Editor','Viewer','Read-Only','HR Admin','Manager'].map(r => `<option>${r}</option>`).join('');
+  const userSelectHtml = Object.entries(USERS).map(([k,u]) =>
+    `<option value="${k}"${k === currentUser ? ' selected' : ''}>${u.name}</option>`
+  ).join('');
+
+  showModal('Grant Application Access', `
+    <div class="form-group">
+      <label class="form-label">User</label>
+      <select class="form-control" id="modal-app-user" onchange="refreshAppOptions()">${userSelectHtml}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Application</label>
+      <select class="form-control" id="modal-app-name" onchange="checkAppDuplicate()"></select>
+      <div id="modal-app-warning" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);font-weight:600;padding:6px 10px;background:var(--amber-bg);border-radius:4px;">
+        This user already has active access to this application.
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role / Permission Level</label>
+      <select class="form-control" id="modal-app-role">${roleOptions}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Business Justification</label>
+      <textarea class="form-control" id="modal-app-reason" rows="2" placeholder="Why does this user need access?"></textarea>
+    </div>
+  `, () => {
+    const key = document.getElementById('modal-app-user').value;
+    const appName = document.getElementById('modal-app-name').value;
+    const role = document.getElementById('modal-app-role').value;
+    const u = USERS[key];
+
+    if (u.apps.find(a => a.name === appName && a.status === 'Active')) {
+      toast(`${u.name} already has active access to ${appName}`, 'error');
+      return;
+    }
+
+    const newApp = { id: 'n' + Date.now(), name: appName, role, granted: today(), by: 'James Thornton (IT Admin)', status: 'Active' };
+    u.apps.push(newApp);
+    addAudit(`Granted ${appName} (${role}) access to ${u.name}`);
+    toast(`${appName} access granted to ${u.name}`, 'success');
+    closeModal();
+    if (currentUser === key) renderAppsTab(u);
+    if (currentSection === 'apps') renderGlobalApps();
+  }, 'Grant Access');
+
+  refreshAppOptions();
+}
+
+function refreshAppOptions() {
+  const userSel = document.getElementById('modal-app-user');
+  const appSel = document.getElementById('modal-app-name');
+  if (!userSel || !appSel) return;
+  const u = USERS[userSel.value];
+  const activeNames = new Set(u.apps.filter(a => a.status === 'Active').map(a => a.name));
+
+  appSel.innerHTML = ALL_APPS.map(app => {
+    const taken = activeNames.has(app);
+    return `<option value="${app}"${taken ? ' disabled style="color:#94a3b8;"' : ''}>${app}${taken ? ' — already assigned' : ''}</option>`;
+  }).join('');
+
+  const firstFree = appSel.querySelector('option:not([disabled])');
+  if (firstFree) firstFree.selected = true;
+
+  checkAppDuplicate();
+}
+
+function checkAppDuplicate() {
+  const userSel = document.getElementById('modal-app-user');
+  const appSel = document.getElementById('modal-app-name');
+  const warn = document.getElementById('modal-app-warning');
+  if (!userSel || !appSel || !warn) return;
+  const u = USERS[userSel.value];
+  const taken = u.apps.some(a => a.name === appSel.value && a.status === 'Active');
+  warn.style.display = taken ? '' : 'none';
+}
+
+function openAssignLicenseModal() {
+  const userOptions = Object.entries(USERS).map(([k,u]) => `<option value="${k}">${u.name}</option>`).join('');
+  const products = [
+    { name: 'Microsoft 365', skus: ['E1 ($12/mo)', 'E3 ($22/mo)', 'E5 ($38/mo)'] },
+    { name: 'GitHub Enterprise', skus: ['Business ($19/mo)', 'Enterprise ($21/mo)'] },
+    { name: 'Zoom', skus: ['Basic ($0/mo)', 'Pro ($15/mo)', 'Business ($20/mo)'] },
+    { name: 'Datadog', skus: ['Pro ($23/mo)', 'Enterprise ($31/mo)'] },
+    { name: 'Slack', skus: ['Pro ($7/mo)', 'Business+ ($12/mo)'] }
+  ];
+  const productOpts = products.map(p => `<option>${p.name}</option>`).join('');
+  showModal('Assign Software License', `
+    <div class="form-group">
+      <label class="form-label">User</label>
+      <select class="form-control" id="modal-lic-user">${currentUser ? `<option value="${currentUser}" selected>${USERS[currentUser].name}</option>${Object.entries(USERS).filter(([k])=>k!==currentUser).map(([k,u])=>`<option value="${k}">${u.name}</option>`).join('')}` : userOptions}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Product</label>
+      <select class="form-control" id="modal-lic-product" onchange="updateSkuOptions()">${productOpts}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">SKU / Plan</label>
+      <select class="form-control" id="modal-lic-sku">${products[0].skus.map(s=>`<option>${s}</option>`).join('')}</select>
+    </div>
+  `, () => {
+    const key = document.getElementById('modal-lic-user').value;
+    const product = document.getElementById('modal-lic-product').value;
+    const skuFull = document.getElementById('modal-lic-sku').value;
+    const sku = skuFull.split(' ')[0];
+    const cost = skuFull.match(/\((.+)\)/)?.[1] || '';
+    const u = USERS[key];
+    const newLic = { id: 'ln' + Date.now(), product, sku, assigned: today(), cost };
+    u.licenses.push(newLic);
+    addAudit(`Assigned ${product} (${sku}) license to ${u.name}`);
+    toast(`${product} ${sku} license assigned to ${u.name}`, 'success');
+    closeModal();
+    if (currentUser === key) renderLicensesTab(u);
+    if (currentSection === 'licenses') renderGlobalLicenses();
+  }, 'Assign License');
+
+  // Preload SKU map for dynamic update
+  window._licProducts = products;
+}
+
+function updateSkuOptions() {
+  const sel = document.getElementById('modal-lic-product');
+  const skuSel = document.getElementById('modal-lic-sku');
+  const product = window._licProducts?.find(p => p.name === sel.value);
+  if (product && skuSel) skuSel.innerHTML = product.skus.map(s => `<option>${s}</option>`).join('');
+}
+
+function showModal(title, bodyHTML, onConfirm, confirmLabel = 'Confirm') {
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-header">
+      <span class="modal-title">${title}</span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">${bodyHTML}</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm-btn">${confirmLabel}</button>
+    </div>
+  `;
+  document.getElementById('modal-confirm-btn').addEventListener('click', onConfirm);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ── Confirm dialog ─────────────────────────────────────────────────────────────
+
+function confirmAction(title, body, type, callback) {
+  const colors = { danger: { icon: '#dc2626', iconBg: '#fee2e2', btnClass: 'btn-danger' }, success: { icon: '#16a34a', iconBg: '#dcfce7', btnClass: 'btn-success' }, info: { icon: '#2563eb', iconBg: '#dbeafe', btnClass: 'btn-primary' } };
+  const c = colors[type] || colors.info;
+  const iconSVGs = {
+    danger: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+    info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
+  document.getElementById('confirm-box').innerHTML = `
+    <div class="confirm-icon" style="background:${c.iconBg};color:${c.icon};">${iconSVGs[type] || iconSVGs.info}</div>
+    <div class="confirm-title">${title}</div>
+    ${body ? `<div class="confirm-body">${body}</div>` : ''}
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+      <button class="btn ${c.btnClass}" id="confirm-ok-btn">Confirm</button>
+    </div>
+  `;
+  confirmCallback = callback;
+  document.getElementById('confirm-ok-btn').addEventListener('click', () => { closeConfirm(); confirmCallback && confirmCallback(); });
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+}
+
+// ── Toasts ─────────────────────────────────────────────────────────────────────
+
+function toast(msg, type = 'info') {
+  const icons = {
+    success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+    error: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `${icons[type] || ''}<span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'toast-out .2s ease forwards';
+    setTimeout(() => el.remove(), 220);
+  }, 3000);
+}
+
+// ── Collapsible ────────────────────────────────────────────────────────────────
+
+function toggleCollapsible(bodyId, iconId) {
+  const body = document.getElementById(bodyId);
+  const icon = document.getElementById(iconId);
+  const isOpen = icon.classList.contains('open');
+  body.style.display = isOpen ? 'none' : '';
+  icon.classList.toggle('open', !isOpen);
+}
+
+// ── Audit log ──────────────────────────────────────────────────────────────────
+
+function addAudit(action) {
+  auditLog.unshift({ ts: nowTs(), action, by: 'James Thornton (IT Admin)', color: '#2563eb' });
+  if (currentSection === 'audit') renderAuditSection();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function statusBadge(status) {
+  const map = { Active: 'badge-green', Suspended: 'badge-red', Offboarded: 'badge-red', Pending: 'badge-amber', Disabled: 'badge-red' };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+}
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function nowTs() {
+  const d = new Date();
+  return d.toISOString().slice(0,16).replace('T',' ') + ' UTC';
+}
+
+// ── Bulk Offboarding ───────────────────────────────────────────────────────────
+
+let offboardRows = [];
+
+function downloadTemplate() {
+  const header = 'email,employee_id,reason,notes';
+  const examples = [
+    'alice.chen@cotiviti.com,EMP-0042,Voluntary Resignation,Last day 2026-06-30',
+    'marcus.obi@cotiviti.com,EMP-0117,Contract End,Equipment return scheduled'
+  ].join('\n');
+  const csv = header + '\n' + examples + '\n';
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'offboarding-template.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('Template downloaded', 'success');
+}
+
+function handleCsvUpload(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    toast('Please upload a .csv file', 'error');
+    return;
+  }
+  document.getElementById('dropzone-filename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCsv(e.target.result);
+    if (!rows.length) { toast('CSV appears to be empty or missing an email column', 'error'); return; }
+    renderOffboardPreview(rows, file.name);
+  };
+  reader.readAsText(file);
+}
+
+function parseCsv(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+  const emailIdx = headers.indexOf('email');
+  if (emailIdx === -1) { toast('CSV must have an "email" column', 'error'); return []; }
+  const empIdx  = headers.indexOf('employee_id');
+  const reasonIdx = headers.indexOf('reason');
+  const notesIdx = headers.indexOf('notes');
+
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const cols = splitCsvLine(line);
+    const email = (cols[emailIdx] || '').trim().toLowerCase();
+    const matchKey = Object.keys(USERS).find(k => USERS[k].email.toLowerCase() === email);
+    return {
+      email,
+      employeeId: empIdx  >= 0 ? cols[empIdx]  || '' : '',
+      reason:     reasonIdx >= 0 ? cols[reasonIdx] || '' : '',
+      notes:      notesIdx  >= 0 ? cols[notesIdx]  || '' : '',
+      matchKey: matchKey || null,
+      user: matchKey ? USERS[matchKey] : null,
+      status: matchKey ? 'matched' : 'not_found'
+    };
+  });
+}
+
+function splitCsvLine(line) {
+  const cols = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+function renderOffboardPreview(rows, filename) {
+  offboardRows = rows;
+  const matched   = rows.filter(r => r.status === 'matched');
+  const notFound  = rows.filter(r => r.status === 'not_found');
+
+  setObStep(2);
+  document.getElementById('offboard-step-upload').style.display = 'none';
+  document.getElementById('offboard-step-preview').style.display = '';
+
+  document.getElementById('offboard-file-info').innerHTML =
+    `<span class="badge badge-blue" style="font-size:12px;">${filename}</span>
+     &nbsp;<span class="badge badge-green">${matched.length} matched</span>
+     ${notFound.length ? `&nbsp;<span class="badge badge-amber">${notFound.length} not found</span>` : ''}`;
+
+  const tableRows = rows.map(r => `
+    <tr>
+      <td style="font-size:12px;">${r.email}</td>
+      <td>${r.employeeId || '<span class="text-muted">—</span>'}</td>
+      <td>${r.user ? `<strong>${r.user.name}</strong>` : '<span class="text-muted">—</span>'}</td>
+      <td>${r.user ? r.user.department : '<span class="text-muted">—</span>'}</td>
+      <td>${r.user ? `${r.user.apps.filter(a=>a.status==='Active').length} apps · ${r.user.licenses.length} licenses` : '<span class="text-muted">—</span>'}</td>
+      <td>${r.reason || '<span class="text-muted">—</span>'}</td>
+      <td>${r.status === 'matched'
+        ? '<span class="badge badge-green">Matched</span>'
+        : '<span class="badge badge-amber">Not Found</span>'}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('offboard-preview-table').innerHTML = `
+    <table>
+      <thead><tr><th>Email</th><th>Employee ID</th><th>Name</th><th>Department</th><th>Scope</th><th>Reason</th><th>Status</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>`;
+
+  const btn = document.getElementById('run-offboard-btn');
+  btn.textContent = `Run Bulk Offboard (${matched.length} user${matched.length !== 1 ? 's' : ''})`;
+  btn.disabled = matched.length === 0;
+  // re-add svg icon that gets wiped by textContent
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg> Run Bulk Offboard (${matched.length} user${matched.length !== 1 ? 's' : ''})`;
+}
+
+function resetOffboardUpload() {
+  offboardRows = [];
+  document.getElementById('offboard-step-preview').style.display = 'none';
+  document.getElementById('offboard-step-results').style.display = 'none';
+  document.getElementById('offboard-step-upload').style.display = '';
+  document.getElementById('csv-file-input').value = '';
+  document.getElementById('dropzone-filename').textContent = '';
+  setObStep(1);
+}
+
+function confirmBulkOffboard() {
+  const matched = offboardRows.filter(r => r.status === 'matched');
+  if (!matched.length) return;
+  confirmAction(
+    `Offboard ${matched.length} user(s)?`,
+    `This will immediately wipe all access and restart devices for:<br>` +
+    matched.map(r => `&nbsp;• <strong>${r.user.name}</strong> (${r.email})${r.reason ? ' — ' + r.reason : ''}`).join('<br>') +
+    `<br><br>All actions will be logged. This cannot be undone automatically.`,
+    'danger',
+    () => runBulkOffboard(matched)
+  );
+}
+
+function runBulkOffboard(matched) {
+  // Capture counts before wiping for the results table
+  const results = matched.map(r => {
+    const u = r.user;
+    const appCount = u.apps.filter(a => a.status === 'Active').length;
+    const licCount = u.licenses.length;
+    const hostname = 'LAPTOP-' + u.initials + '-' + u.id.replace('EMP-', '');
+
+    captureOffboardSnapshot(u, r.reason || 'Bulk Offboard');
+
+    u.apps.forEach(a => { a.status = 'Revoked'; });
+    u.licenses.splice(0);
+    u.okta.status = 'Suspended';
+    u.status = 'Suspended';
+    u.ad.accountEnabled = false;
+
+    addAudit(
+      `BULK OFFBOARD: ${u.name} — ${appCount} app(s) revoked, ${licCount} license(s) removed, ` +
+      `Okta suspended, AD disabled, restart sent to ${hostname}` +
+      (r.reason ? `. Reason: ${r.reason}` : '')
+    );
+
+    return { ...r, appCount, licCount, hostname };
+  });
+
+  if (currentUser && results.some(r => r.matchKey === currentUser)) {
+    renderProfile(USERS[currentUser]);
+    renderAccessTabs(USERS[currentUser]);
+  }
+
+  showOffboardResults(results);
+
+  // Staggered toasts
+  results.forEach((r, i) => {
+    setTimeout(() => toast(`Offboarded ${r.user.name} — access wiped, restart sent to ${r.hostname}`, 'error'), i * 600);
+  });
+  setTimeout(() => toast(`Bulk offboard complete — ${results.length} user(s) processed`, 'warning'), results.length * 600 + 200);
+}
+
+function showOffboardResults(processed) {
+  const notFound = offboardRows.filter(r => r.status === 'not_found');
+  setObStep(3);
+  document.getElementById('offboard-step-preview').style.display = 'none';
+  document.getElementById('offboard-step-results').style.display = '';
+
+  document.getElementById('offboard-results-body').innerHTML = `
+    <div class="result-summary">
+      <div class="result-stat rs-success">
+        <div class="rs-count">${processed.length}</div>
+        <div class="rs-label">Successfully Offboarded</div>
+      </div>
+      <div class="result-stat rs-fail">
+        <div class="rs-count">${notFound.length}</div>
+        <div class="rs-label">Not Found / Skipped</div>
+      </div>
+    </div>
+    <div class="table-wrap" style="margin-top:16px;">
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Apps Revoked</th><th>Licenses Removed</th><th>Device</th><th>Reason</th><th>Outcome</th></tr></thead>
+        <tbody>
+          ${processed.map(r => `
+            <tr>
+              <td><strong>${r.user.name}</strong></td>
+              <td style="font-size:12px;">${r.email}</td>
+              <td>${r.appCount}</td>
+              <td>${r.licCount}</td>
+              <td class="font-mono">${r.hostname}</td>
+              <td>${r.reason || '<span class="text-muted">—</span>'}</td>
+              <td><span class="badge badge-red">Offboarded</span></td>
+            </tr>`).join('')}
+          ${notFound.map(r => `
+            <tr>
+              <td><span class="text-muted">—</span></td>
+              <td style="font-size:12px;">${r.email}</td>
+              <td>—</td><td>—</td><td>—</td>
+              <td>${r.reason || '<span class="text-muted">—</span>'}</td>
+              <td><span class="badge badge-amber">Not Found</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="resetOffboardUpload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.29"/></svg>
+        Offboard Another Batch
+      </button>
+    </div>
+  `;
+}
+
+function setObStep(n) {
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('ob-dot-' + i);
+    const lbl = document.getElementById('ob-lbl-' + i);
+    const con = document.getElementById('ob-con-' + i);
+    if (!dot) return;
+    dot.className = 'ob-step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+    lbl.className = 'ob-step-label' + (i < n ? ' done' : i === n ? ' active' : '');
+    if (con) con.className = 'ob-connector' + (i < n ? ' done' : '');
+  });
+}
+
+// ── Offboarded users — lifecycle management ────────────────────────────────────
+
+function captureOffboardSnapshot(u, reason) {
+  if (u.offboarded) return; // already snapshotted
+  u.offboarded = true;
+  u.offboardStatus = 'Offboarded';
+  u.offboardReason = reason || '';
+  u.offboardedAt = new Date().toISOString();
+  u.snapshot = {
+    apps: u.apps.filter(a => a.status === 'Active').map(a => ({ ...a })),
+    licenses: u.licenses.map(l => ({ ...l })),
+    oktaStatus: u.okta.status,
+    oktaGroups: [...u.okta.groups],
+    adEnabled: u.ad.accountEnabled,
+    adGroups: [...u.ad.groups]
+  };
+}
+
+function daysSince(isoString) {
+  return Math.floor((Date.now() - new Date(isoString).getTime()) / 86400000);
+}
+
+function renderOffboardedUsers() {
+  const entries = Object.entries(USERS).filter(([, u]) => u.offboarded && u.offboardStatus !== 'Deleted');
+  const body = document.getElementById('offboarded-users-body');
+  const badge = document.getElementById('offboarded-count-badge');
+  if (badge) badge.textContent = entries.length;
+
+  if (!entries.length) {
+    body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">No offboarded users yet. Wipe or bulk-offboard a user to track them here.</p>';
+    return;
+  }
+
+  body.innerHTML = entries.map(([key, u]) => {
+    const days = daysSince(u.offboardedAt);
+    const withinWindow = days < 30;
+    const pct = Math.min((days / 30) * 100, 100).toFixed(1);
+    const snap = u.snapshot || { apps: [], licenses: [], oktaStatus: '—', adEnabled: false, oktaGroups: [], adGroups: [] };
+    const offboardDate = new Date(u.offboardedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    return `
+      <div class="ob-user-card">
+        <div class="ob-user-header">
+          <div class="ob-user-avatar" style="background:${u.avatarColor}20;color:${u.avatarColor};">${u.initials}</div>
+          <div class="ob-user-info">
+            <div class="ob-user-name">
+              ${u.name}
+              <span class="badge badge-red" style="font-size:10px;">Offboarded</span>
+              ${withinWindow ? '<span class="badge badge-green" style="font-size:10px;">Rehire Eligible</span>' : '<span class="badge badge-amber" style="font-size:10px;">Delete Eligible</span>'}
+            </div>
+            <div class="ob-user-meta">${u.email} &nbsp;·&nbsp; ${u.department} &nbsp;·&nbsp; ${u.id}</div>
+            <div class="ob-user-meta" style="margin-top:3px;">
+              Reason: <strong>${u.offboardReason || 'Not specified'}</strong>
+              &nbsp;·&nbsp; Offboarded: <strong>${offboardDate}</strong>
+              &nbsp;·&nbsp; <strong style="color:${withinWindow ? 'var(--green)' : 'var(--red)'};">${days} day${days !== 1 ? 's' : ''} ago</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-wrap">
+          <div class="timeline-label">
+            <span style="color:var(--text-muted);">Day 0</span>
+            <span style="font-weight:600;color:${withinWindow ? 'var(--green)' : 'var(--red)'};">
+              ${withinWindow
+                ? `${30 - days} day${30 - days !== 1 ? 's' : ''} remaining in rehire window`
+                : `${days - 30} day${days - 30 !== 1 ? 's' : ''} past hold — deletion unlocked`}
+            </span>
+            <span style="color:var(--text-muted);">Day 30</span>
+          </div>
+          <div class="timeline-bar-bg">
+            <div class="timeline-bar-fill ${withinWindow ? 'within' : 'over'}" style="width:${pct}%;"></div>
+          </div>
+        </div>
+
+        <div class="snapshot-meta">
+          <span>Snapshot: <strong>${snap.apps.length} app${snap.apps.length !== 1 ? 's' : ''}</strong></span>
+          <span><strong>${snap.licenses.length} license${snap.licenses.length !== 1 ? 's' : ''}</strong></span>
+          <span>Okta: <strong>${snap.oktaStatus}</strong></span>
+          <span>AD: <strong>${snap.adEnabled ? 'Enabled' : 'Disabled'}</strong></span>
+        </div>
+
+        <div class="ob-user-actions">
+          ${withinWindow ? `
+            <button class="btn btn-success btn-sm" onclick="rehireUser('${key}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+              Rehire (Restore All)
+            </button>
+          ` : ''}
+          <button class="btn btn-primary btn-sm" onclick="openRestoreModal('${key}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.29"/></svg>
+            Restore Data
+          </button>
+          <button class="btn btn-disable btn-sm" onclick="disableAccount('${key}')"
+            ${u.offboardStatus === 'Disabled' ? 'disabled style="opacity:.45;cursor:not-allowed;"' : ''}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            ${u.offboardStatus === 'Disabled' ? 'Account Disabled' : 'Disable Account'}
+          </button>
+          <button class="btn btn-sm ${withinWindow ? 'btn-outline' : 'btn-danger'}"
+            ${withinWindow ? `disabled title="Delete unlocks after the 30-day hold (${30 - days}d remaining)"` : `onclick="disableDeleteUser('${key}')"`}
+            style="${withinWindow ? 'opacity:.45;cursor:not-allowed;' : ''}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            ${withinWindow ? `Delete (locked — ${30 - days}d)` : 'Delete Permanently'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function rehireUser(key) {
+  const u = USERS[key];
+  if (daysSince(u.offboardedAt) >= 30) {
+    toast('Rehire window has expired. Use Restore Data to selectively recover access.', 'error');
+    return;
+  }
+  const snap = u.snapshot;
+  confirmAction(
+    `Rehire ${u.name}?`,
+    `Full access will be restored from the offboarding snapshot:<br>
+     &nbsp;• <strong>${snap.apps.length}</strong> application access(es)<br>
+     &nbsp;• <strong>${snap.licenses.length}</strong> license(s)<br>
+     &nbsp;• Okta account &rarr; <strong>Active</strong><br>
+     &nbsp;• Active Directory &rarr; <strong>Enabled</strong><br>
+     &nbsp;• Email / Microsoft 365 mailbox &rarr; <strong>Restored</strong><br><br>
+     The user will be marked Active and removed from this list.`,
+    'success',
+    () => {
+      snap.apps.forEach(snapApp => {
+        const existing = u.apps.find(a => a.id === snapApp.id);
+        if (existing) existing.status = 'Active';
+        else u.apps.push({ ...snapApp });
+      });
+      u.licenses.push(...snap.licenses.map(l => ({ ...l, id: 'rh' + Date.now() + Math.random().toString(36).slice(2) })));
+      u.okta.status = 'Active';
+      u.okta.groups = [...snap.oktaGroups];
+      u.ad.accountEnabled = true;
+      u.ad.groups = [...snap.adGroups];
+      u.status = 'Active';
+      u.offboarded = false;
+      u.offboardStatus = null;
+
+      addAudit(`REHIRE: ${u.name} — full access restored from snapshot (${snap.apps.length} apps, ${snap.licenses.length} licenses, Okta & AD re-enabled)`);
+      toast(`${u.name} rehired — all access restored`, 'success');
+      renderOffboardedUsers();
+      if (currentUser === key) { renderProfile(u); renderAccessTabs(u); }
+    }
+  );
+}
+
+function openRestoreModal(key) {
+  const u = USERS[key];
+  const snap = u.snapshot;
+  if (!snap) { toast('No snapshot available for this user', 'error'); return; }
+
+  showModal(`Restore Data — ${u.name}`, `
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+      Select items to restore from the offboarding snapshot captured on
+      <strong>${new Date(u.offboardedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</strong>.
+      Existing active access will not be duplicated.
+    </p>
+    <div>
+      <div class="restore-item">
+        <input type="checkbox" id="r-okta" checked>
+        <div>
+          <div class="restore-item-label">Okta Account (SSO)</div>
+          <div class="restore-item-sub">
+            Reactivate account &rarr; <strong>Active</strong><br>
+            Restore groups: ${snap.oktaGroups.length ? snap.oktaGroups.map(g=>`<span class="tag" style="display:inline;padding:1px 6px;">${g}</span>`).join(' ') : '<em>none</em>'}
+          </div>
+        </div>
+      </div>
+      <div class="restore-item">
+        <input type="checkbox" id="r-ad" checked>
+        <div>
+          <div class="restore-item-label">Active Directory Account</div>
+          <div class="restore-item-sub">
+            Re-enable AD account &rarr; <strong>Enabled</strong><br>
+            Restore groups: ${snap.adGroups.length ? snap.adGroups.join(', ') : '<em>none</em>'}
+          </div>
+        </div>
+      </div>
+      <div class="restore-item">
+        <input type="checkbox" id="r-apps" ${snap.apps.length ? 'checked' : 'disabled'}>
+        <div>
+          <div class="restore-item-label">Application Access (${snap.apps.length} apps)</div>
+          <div class="restore-item-sub">${snap.apps.length ? snap.apps.map(a=>`${a.name} — <em>${a.role}</em>`).join('<br>') : '<em>No apps in snapshot</em>'}</div>
+        </div>
+      </div>
+      <div class="restore-item">
+        <input type="checkbox" id="r-licenses" ${snap.licenses.length ? 'checked' : 'disabled'}>
+        <div>
+          <div class="restore-item-label">Licenses (${snap.licenses.length} assigned)</div>
+          <div class="restore-item-sub">${snap.licenses.length ? snap.licenses.map(l=>`${l.product} ${l.sku} — <em>${l.cost}</em>`).join('<br>') : '<em>No licenses in snapshot</em>'}</div>
+        </div>
+      </div>
+      <div class="restore-item">
+        <input type="checkbox" id="r-email" checked>
+        <div>
+          <div class="restore-item-label">Email / Microsoft 365 Mailbox</div>
+          <div class="restore-item-sub">Restore mailbox routing and calendar access for <strong>${u.email}</strong></div>
+        </div>
+      </div>
+    </div>
+  `, () => executeRestore(key), 'Restore Selected');
+}
+
+function executeRestore(key) {
+  const u = USERS[key];
+  const snap = u.snapshot;
+  const restored = [];
+
+  if (document.getElementById('r-okta')?.checked) {
+    u.okta.status = 'Active';
+    u.okta.groups = [...snap.oktaGroups];
+    restored.push('Okta SSO');
+  }
+  if (document.getElementById('r-ad')?.checked) {
+    u.ad.accountEnabled = true;
+    u.ad.groups = [...snap.adGroups];
+    restored.push('Active Directory');
+  }
+  if (document.getElementById('r-apps')?.checked) {
+    snap.apps.forEach(snapApp => {
+      const existing = u.apps.find(a => a.id === snapApp.id);
+      if (existing) existing.status = 'Active';
+      else u.apps.push({ ...snapApp });
+    });
+    restored.push(`${snap.apps.length} app(s)`);
+  }
+  if (document.getElementById('r-licenses')?.checked) {
+    const existingIds = new Set(u.licenses.map(l => l.id));
+    snap.licenses.forEach(l => {
+      if (!existingIds.has(l.id)) u.licenses.push({ ...l, id: 'rs' + Date.now() + Math.random().toString(36).slice(2) });
+    });
+    restored.push(`${snap.licenses.length} license(s)`);
+  }
+  if (document.getElementById('r-email')?.checked) {
+    restored.push('Email/M365 mailbox');
+  }
+
+  if (!restored.length) { toast('No items selected to restore', 'warning'); return; }
+
+  addAudit(`DATA RESTORE: ${u.name} — restored: ${restored.join(', ')}`);
+  toast(`Restored ${restored.join(', ')} for ${u.name}`, 'success');
+  closeModal();
+  renderOffboardedUsers();
+  if (currentUser === key) { renderProfile(u); renderAccessTabs(u); }
+}
+
+function disableDeleteUser(key) {
+  const u = USERS[key];
+  const days = daysSince(u.offboardedAt);
+  if (days < 30) {
+    toast(`Disable & Delete is locked for ${30 - days} more day(s). The 30-day rehire hold has not expired.`, 'error');
+    return;
+  }
+
+  showModal(`Permanently Disable & Delete — ${u.name}`, `
+    <div style="background:var(--red-bg);border:1px solid #fca5a5;border-radius:6px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-weight:700;color:var(--red);font-size:13px;margin-bottom:4px;">This action is permanent and irreversible.</div>
+      <div style="font-size:12px;color:#7f1d1d;">
+        All account data, directory entries, app access records, and the offboarding snapshot for
+        <strong>${u.name}</strong> will be permanently purged from all systems.
+        The account will be locked and cannot be restored.
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type <strong>DELETE</strong> to confirm permanent deletion</label>
+      <input class="form-control" id="delete-confirm-input" placeholder="Type DELETE here" autocomplete="off"
+        oninput="document.getElementById('modal-confirm-btn').disabled = this.value !== 'DELETE'">
+    </div>
+  `, () => {
+    if (document.getElementById('delete-confirm-input')?.value !== 'DELETE') {
+      toast('Type DELETE exactly to confirm', 'error');
+      return;
+    }
+    u.offboardStatus = 'Deleted';
+    u.status = 'Deleted';
+    u.deleted = true;
+    u.snapshot = null;
+    addAudit(`PERMANENT DELETE: ${u.name} (${u.id}) — account disabled and all data purged after ${days}-day hold`);
+    toast(`${u.name}'s account permanently deleted`, 'error');
+    closeModal();
+    renderOffboardedUsers();
+    if (currentUser === key) {
+      currentUser = null;
+      document.getElementById('user-search').value = '';
+      document.getElementById('profile-empty').style.display = '';
+      document.getElementById('profile-data').style.display = 'none';
+      document.getElementById('access-empty').style.display = '';
+      document.getElementById('access-data').style.display = 'none';
+      document.getElementById('profile-status-badge').innerHTML = '';
+    }
+  }, 'Delete Permanently');
+
+  setTimeout(() => {
+    const btn = document.getElementById('modal-confirm-btn');
+    if (btn) { btn.disabled = true; btn.className = btn.className.replace('btn-primary', 'btn-danger'); }
+  }, 30);
+}
+
+function disableAccount(key) {
+  const u = USERS[key];
+  if (u.offboardStatus === 'Disabled') { toast('Account is already disabled', 'warning'); return; }
+  confirmAction(
+    `Disable account for ${u.name}?`,
+    `This formally marks the account as <strong>Disabled</strong> across all directory systems. The offboarding snapshot is preserved — access can still be restored via <em>Restore Data</em>. This does not permanently delete any data.`,
+    'danger',
+    () => {
+      u.offboardStatus = 'Disabled';
+      u.okta.status = 'Suspended';
+      u.ad.accountEnabled = false;
+      if (u.adAccounts) u.adAccounts.forEach(a => { a.enabled = false; });
+      addAudit(`DISABLE: ${u.name} (${u.id}) — account formally disabled across all directory systems`);
+      toast(`${u.name}'s account disabled`, 'warning');
+      renderOffboardedUsers();
+      if (currentUser === key) { renderProfile(u); renderAccessTabs(u); }
+    }
+  );
+}
+
+// ── Agent view ─────────────────────────────────────────────────────────────────
+
+let agentSelectedKey = null;
+
+function renderAgentView() {
+  renderAgentList(Object.entries(USERS));
+  if (agentSelectedKey && USERS[agentSelectedKey]) {
+    renderAgentDetail(agentSelectedKey);
+  }
+}
+
+function renderAgentList(entries) {
+  document.getElementById('agent-user-list').innerHTML = entries
+    .filter(([, u]) => !u.deleted)
+    .map(([key, u]) => {
+      const adCount  = (u.adAccounts || [u.ad]).length;
+      const appCount = u.apps.filter(a => a.status === 'Active').length;
+      const extCount = (u.externalAccounts || []).length;
+      const isSelected = key === agentSelectedKey;
+      return `
+        <div class="agent-user-item${isSelected ? ' selected' : ''}" onclick="selectAgentUser('${key}')">
+          <div class="au-avatar" style="background:${u.avatarColor}20;color:${u.avatarColor};">${u.initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="au-name">${u.name}</div>
+            <div class="au-sub">${u.department}</div>
+            <div class="au-sub" style="margin-top:2px;">
+              ${adCount} AD · ${appCount} app${appCount !== 1 ? 's' : ''} · ${extCount} ext
+              &nbsp;${statusBadge(u.status)}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function filterAgentList(q) {
+  const lq = q.toLowerCase();
+  const filtered = Object.entries(USERS).filter(([, u]) =>
+    !u.deleted && (u.name.toLowerCase().includes(lq) || u.email.toLowerCase().includes(lq) || u.department.toLowerCase().includes(lq))
+  );
+  renderAgentList(filtered);
+}
+
+function selectAgentUser(key) {
+  agentSelectedKey = key;
+  renderAgentDetail(key);
+  // update selected highlight in list
+  document.querySelectorAll('.agent-user-item').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+function renderAgentDetail(key) {
+  const u = USERS[key];
+  const adAccounts    = u.adAccounts || [u.ad];
+  const externalAccts = u.externalAccounts || [];
+  const activeApps    = u.apps.filter(a => a.status === 'Active');
+  const revokedApps   = u.apps.filter(a => a.status === 'Revoked');
+
+  // Risk signals
+  const risks = [];
+  if (u.apps.some(a => a.role === 'Admin' && a.status === 'Active'))
+    risks.push({ level: 'high', label: 'Admin role(s) active' });
+  if (adAccounts.length > 1)
+    risks.push({ level: 'warn', label: `${adAccounts.length} AD accounts (multi-domain)` });
+  if (externalAccts.length > 2)
+    risks.push({ level: 'warn', label: `${externalAccts.length} external system accounts` });
+  if (u.okta.lastLogin && new Date(u.okta.lastLogin) < new Date(Date.now() - 30*86400000))
+    risks.push({ level: 'warn', label: 'Okta last login >30 days ago' });
+  if (u.offboarded)
+    risks.push({ level: 'high', label: `Offboarded user — ${daysSince(u.offboardedAt)}d ago` });
+
+  const riskHtml = risks.length
+    ? risks.map(r => `<span class="risk-chip ${r.level}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${r.label}</span>`).join('')
+    : '<span class="risk-chip info" style="background:#dcfce7;color:#166534;">No risk signals detected</span>';
+
+  const adHtml = adAccounts.map(ad => `
+    <div class="sys-card">
+      <div class="sys-card-hdr">
+        <span class="sys-card-name">${ad.domain}</span>
+        ${ad.enabled ? '<span class="badge badge-green">Enabled</span>' : '<span class="badge badge-red">Disabled</span>'}
+      </div>
+      <div class="sys-card-detail">
+        SAM Account: <strong class="font-mono">${ad.samAccount || ad.domain}</strong>
+        &nbsp;·&nbsp; OU: <span class="font-mono" style="font-size:10px;">${ad.ou}</span>
+        &nbsp;·&nbsp; Pwd expires: <strong>${ad.passwordExpiry}</strong>
+      </div>
+      <div class="sys-tags">${ad.groups.map(g => `<span class="tag">${g}</span>`).join('')}</div>
+    </div>`).join('');
+
+  const extHtml = externalAccts.length
+    ? externalAccts.map(e => `
+        <div class="sys-card">
+          <div class="sys-card-hdr">
+            <span class="sys-card-name">${e.system}</span>
+            <span class="badge ${e.status === 'Active' ? 'badge-green' : e.status === 'Suspended' ? 'badge-red' : 'badge-amber'}">${e.status}</span>
+          </div>
+          <div class="sys-card-detail">Account: <strong class="font-mono">${e.accountId}</strong> &nbsp;·&nbsp; Role: <strong>${e.role}</strong></div>
+          ${e.detail ? `<div class="sys-card-detail" style="margin-top:3px;">${e.detail}</div>` : ''}
+        </div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-muted);">No external accounts recorded.</p>';
+
+  const appsHtml = u.apps.length ? `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Application</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Role</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Granted</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Status</th>
+      </tr></thead>
+      <tbody>${u.apps.map(a => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;font-size:13px;"><strong>${a.name}</strong></td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;"><span class="badge badge-blue">${a.role}</span></td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;font-size:12px;color:var(--text-muted);">${a.granted}</td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;">${a.status === 'Active' ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Revoked</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p style="font-size:13px;color:var(--text-muted);">No application access records.</p>';
+
+  const licHtml = u.licenses.length ? `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Product</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">SKU</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Assigned</th>
+        <th style="text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);">Cost</th>
+      </tr></thead>
+      <tbody>${u.licenses.map(l => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;font-size:13px;"><strong>${l.product}</strong></td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;"><span class="tag">${l.sku}</span></td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;font-size:12px;color:var(--text-muted);">${l.assigned}</td>
+          <td style="padding:8px;border-bottom:1px solid #f8fafc;font-size:13px;">${l.cost}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p style="font-size:13px;color:var(--text-muted);">No licenses assigned.</p>';
+
+  document.getElementById('agent-detail').innerHTML = `
+    <div class="agent-header">
+      <div class="agent-avatar-lg" style="background:${u.avatarColor}20;color:${u.avatarColor};">${u.initials}</div>
+      <div class="agent-header-info">
+        <div class="agent-header-name">${u.name} ${statusBadge(u.status)}</div>
+        <div class="agent-header-sub">${u.title} &nbsp;·&nbsp; ${u.department} &nbsp;·&nbsp; ${u.id} &nbsp;·&nbsp; ${u.email}</div>
+        <div class="agent-stats">
+          <span class="agent-stat"><strong>${adAccounts.length}</strong> AD account${adAccounts.length !== 1 ? 's' : ''}</span>
+          <span class="agent-stat"><strong>${activeApps.length}</strong> active app${activeApps.length !== 1 ? 's' : ''}</span>
+          <span class="agent-stat"><strong>${revokedApps.length}</strong> revoked</span>
+          <span class="agent-stat"><strong>${u.licenses.length}</strong> license${u.licenses.length !== 1 ? 's' : ''}</span>
+          <span class="agent-stat"><strong>${externalAccts.length}</strong> external account${externalAccts.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Risk Signals
+      </div>
+      <div>${riskHtml}</div>
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Okta SSO
+      </div>
+      <div class="sys-card">
+        <div class="sys-card-hdr">
+          <span class="sys-card-name">${u.okta.userId}</span>
+          ${statusBadge(u.okta.status)}
+        </div>
+        <div class="sys-card-detail">
+          MFA: <strong>${u.okta.mfa ? u.okta.mfaMethod : 'Not enrolled'}</strong>
+          &nbsp;·&nbsp; Last login: <strong>${u.okta.lastLogin}</strong>
+        </div>
+        <div class="sys-tags">${u.okta.groups.map(g => `<span class="tag">${g}</span>`).join('') || '<span class="text-muted" style="font-size:12px;">No groups</span>'}</div>
+      </div>
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Active Directory (${adAccounts.length} account${adAccounts.length !== 1 ? 's' : ''})
+      </div>
+      ${adHtml}
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Application Access (${activeApps.length} active · ${revokedApps.length} revoked)
+      </div>
+      <div class="table-wrap">${appsHtml}</div>
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>
+        External &amp; Cloud Accounts (${externalAccts.length})
+      </div>
+      ${extHtml}
+    </div>
+
+    <div class="agent-block">
+      <div class="agent-block-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="2"/></svg>
+        Licenses (${u.licenses.length})
+      </div>
+      <div class="table-wrap">${licHtml}</div>
+    </div>
+  `;
+}
+
+// ── Ticket Distribution ────────────────────────────────────────────────────────
+
+const tdState = {
+  tickets: null,
+  agents: null,
+  method: 'smart',
+  flagSla: false,
+  result: null
+};
+
+const TD_TICKET_COLS  = ['TICKET_ID','SUMMARY','PRIORITY','CATEGORY','STATUS','CREATED_DATE','SLA_DUE'];
+const TD_AGENT_COLS   = ['AGENT_NAME','AGENT_ID','SHIFT','SHIFT_START','SHIFT_END','MAX_TICKETS','SPECIALIZATION'];
+const TD_METHOD_DESCS = {
+  smart:      'Match ticket CATEGORY to agent SPECIALIZATION first, then distribute by lowest load. P1s always assigned first. Unmatched tickets fall back to General agents.',
+  roundrobin: 'Distribute tickets evenly across all available agents, cycling in order. Respects MAX_TICKETS cap. Priority order maintained — P1s assigned first.',
+  priority:   'All P1 tickets go to the most tenured agents (lowest Agent ID). Remaining tickets distributed by load balancing.'
+};
+const TD_METHOD_LABELS = { smart: 'Smart Routing', roundrobin: 'Round Robin', priority: 'Priority-First Balanced' };
+
+function tdBuildSampleTickets() {
+  const addH = h => {
+    const d = new Date(Date.now() + h * 3600000);
+    return d.toISOString().slice(0,16).replace('T',' ');
+  };
+  return [
+    { TICKET_ID:'MGW-1041', SUMMARY:'Unable to login to Okta SSO — user locked out',        PRIORITY:'P1 Critical', CATEGORY:'IAM',      STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(1.5) },
+    { TICKET_ID:'MGW-1042', SUMMARY:'VPN dropping intermittently for remote team',           PRIORITY:'P1 Critical', CATEGORY:'Network',  STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(0.5) },
+    { TICKET_ID:'MGW-1043', SUMMARY:'New hire account provisioning blocked in AD',           PRIORITY:'P2 High',     CATEGORY:'IAM',      STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(5)   },
+    { TICKET_ID:'MGW-1044', SUMMARY:'Laptop screen flickering on Dell XPS 15',              PRIORITY:'P3 Medium',   CATEGORY:'Hardware', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(24)  },
+    { TICKET_ID:'MGW-1045', SUMMARY:'Microsoft Teams audio not working in meetings',         PRIORITY:'P3 Medium',   CATEGORY:'Software', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(26)  },
+    { TICKET_ID:'MGW-1046', SUMMARY:'Suspicious login attempt detected in audit log',        PRIORITY:'P1 Critical', CATEGORY:'Security', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(2)   },
+    { TICKET_ID:'MGW-1047', SUMMARY:'AD group membership incorrect for Finance team',        PRIORITY:'P2 High',     CATEGORY:'IAM',      STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(7)   },
+    { TICKET_ID:'MGW-1048', SUMMARY:'Network printer offline in Building C',                 PRIORITY:'P3 Medium',   CATEGORY:'Network',  STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(28)  },
+    { TICKET_ID:'MGW-1049', SUMMARY:'Software license expired for Tableau Desktop',         PRIORITY:'P2 High',     CATEGORY:'Software', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(8)   },
+    { TICKET_ID:'MGW-1050', SUMMARY:'Keyboard key stuck on MacBook Pro keyboard',           PRIORITY:'P4 Low',      CATEGORY:'Hardware', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(48)  },
+    { TICKET_ID:'MGW-1051', SUMMARY:'MFA token out of sync for multiple users',             PRIORITY:'P2 High',     CATEGORY:'Security', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(3)   },
+    { TICKET_ID:'MGW-1052', SUMMARY:'Email auto-reply configuration not working correctly', PRIORITY:'P4 Low',      CATEGORY:'Software', STATUS:'Open', CREATED_DATE:today(), SLA_DUE:addH(72)  }
+  ];
+}
+
+const TD_SAMPLE_AGENTS = [
+  { AGENT_NAME:'Sarah Kim',      AGENT_ID:'AGT-001', SHIFT:'Morning',   SHIFT_START:'06:00', SHIFT_END:'14:00', MAX_TICKETS:'10', SPECIALIZATION:'IAM'      },
+  { AGENT_NAME:'Marcus Webb',    AGENT_ID:'AGT-002', SHIFT:'Morning',   SHIFT_START:'06:00', SHIFT_END:'14:00', MAX_TICKETS:'8',  SPECIALIZATION:'Network'  },
+  { AGENT_NAME:'Priya Singh',    AGENT_ID:'AGT-003', SHIFT:'Morning',   SHIFT_START:'06:00', SHIFT_END:'14:00', MAX_TICKETS:'10', SPECIALIZATION:'General'  },
+  { AGENT_NAME:'Jordan Torres',  AGENT_ID:'AGT-004', SHIFT:'Afternoon', SHIFT_START:'14:00', SHIFT_END:'22:00', MAX_TICKETS:'10', SPECIALIZATION:'Hardware' },
+  { AGENT_NAME:'Aisha Patel',    AGENT_ID:'AGT-005', SHIFT:'Afternoon', SHIFT_START:'14:00', SHIFT_END:'22:00', MAX_TICKETS:'10', SPECIALIZATION:'Software' },
+  { AGENT_NAME:'Dev Ramirez',    AGENT_ID:'AGT-006', SHIFT:'Afternoon', SHIFT_START:'14:00', SHIFT_END:'22:00', MAX_TICKETS:'8',  SPECIALIZATION:'Security' },
+  { AGENT_NAME:'Nina Chen',      AGENT_ID:'AGT-007', SHIFT:'Night',     SHIFT_START:'22:00', SHIFT_END:'06:00', MAX_TICKETS:'6',  SPECIALIZATION:'General'  },
+  { AGENT_NAME:'Tom Bailey',     AGENT_ID:'AGT-008', SHIFT:'Night',     SHIFT_START:'22:00', SHIFT_END:'06:00', MAX_TICKETS:'6',  SPECIALIZATION:'IAM'      },
+  { AGENT_NAME:'Zoe Watson',     AGENT_ID:'AGT-009', SHIFT:'Night',     SHIFT_START:'22:00', SHIFT_END:'06:00', MAX_TICKETS:'6',  SPECIALIZATION:'Network'  }
+];
+
+function tdParseCsvGeneric(text) {
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  const rows = lines.slice(1).filter(l => l.trim()).map(line => {
+    const cols = splitCsvLine(line);
+    const obj = {};
+    headers.forEach((h,i) => { obj[h] = (cols[i] || '').trim().replace(/^"|"$/g,''); });
+    return obj;
+  });
+  return { headers, rows };
+}
+
+function tdValidateAndLoad(text, requiredCols) {
+  const { headers, rows } = tdParseCsvGeneric(text);
+  const missing = requiredCols.filter(c => !headers.includes(c));
+  return { ok: missing.length === 0, missing, rows };
+}
+
+function tdPriorityWeight(p) {
+  const s = (p || '').toLowerCase();
+  if (s.includes('p1') || s.includes('critical')) return 1;
+  if (s.includes('p2') || s.includes('high'))     return 2;
+  if (s.includes('p3') || s.includes('medium'))   return 3;
+  return 4;
+}
+
+function tdPriorityBadge(p) {
+  const w = tdPriorityWeight(p);
+  const cls = ['','badge-red','badge-amber','badge-blue','badge-gray'][w] || 'badge-gray';
+  return `<span class="badge ${cls}" style="font-size:10px;flex-shrink:0;">${escapeHtml(p)}</span>`;
+}
+
+function tdPriorityClass(p) {
+  return ['','td-p1','td-p2','td-p3','td-p4'][tdPriorityWeight(p)] || 'td-p4';
+}
+
+function tdIsAgentActive(agent) {
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  const [sh,sm] = agent.SHIFT_START.split(':').map(Number);
+  const [eh,em] = agent.SHIFT_END.split(':').map(Number);
+  const startM = sh*60+sm, endM = eh*60+em;
+  return endM > startM ? (nowM >= startM && nowM < endM) : (nowM >= startM || nowM < endM);
+}
+
+function tdFlagSlaBreaches(tickets, hoursAhead) {
+  const threshold = new Date(Date.now() + (hoursAhead || 4) * 3600000);
+  return tickets.map(t => {
+    const due = new Date(t.SLA_DUE);
+    return { ...t, slaBreach: !isNaN(due.getTime()) && due <= threshold };
+  });
+}
+
+function tdSortByPriority(tickets) {
+  return [...tickets].sort((a,b) => {
+    if (a.slaBreach && !b.slaBreach) return -1;
+    if (!a.slaBreach && b.slaBreach)  return 1;
+    return tdPriorityWeight(a.PRIORITY) - tdPriorityWeight(b.PRIORITY);
+  });
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function tdDistributeSmartRouting(tickets, activeAgents) {
+  const loads = {}, assignments = {};
+  activeAgents.forEach(a => { loads[a.AGENT_ID] = 0; assignments[a.AGENT_ID] = []; });
+  const unassigned = [];
+  for (const ticket of tdSortByPriority(tickets)) {
+    const cat = (ticket.CATEGORY || '').toLowerCase();
+    let cands = activeAgents.filter(a => a.SPECIALIZATION.toLowerCase() === cat && loads[a.AGENT_ID] < Number(a.MAX_TICKETS));
+    if (!cands.length) cands = activeAgents.filter(a => a.SPECIALIZATION.toLowerCase() === 'general' && loads[a.AGENT_ID] < Number(a.MAX_TICKETS));
+    if (!cands.length) { unassigned.push(ticket); continue; }
+    cands.sort((a,b) => loads[a.AGENT_ID] - loads[b.AGENT_ID]);
+    const chosen = cands[0];
+    assignments[chosen.AGENT_ID].push(ticket);
+    loads[chosen.AGENT_ID]++;
+  }
+  return { assignments, unassigned };
+}
+
+function tdDistributeRoundRobin(tickets, activeAgents) {
+  const loads = {}, assignments = {};
+  activeAgents.forEach(a => { loads[a.AGENT_ID] = 0; assignments[a.AGENT_ID] = []; });
+  const unassigned = [];
+  let idx = 0;
+  for (const ticket of tdSortByPriority(tickets)) {
+    let assigned = false;
+    for (let i = 0; i < activeAgents.length; i++) {
+      const agent = activeAgents[(idx + i) % activeAgents.length];
+      if (loads[agent.AGENT_ID] < Number(agent.MAX_TICKETS)) {
+        assignments[agent.AGENT_ID].push(ticket);
+        loads[agent.AGENT_ID]++;
+        idx = (idx + i + 1) % activeAgents.length;
+        assigned = true;
+        break;
+      }
+    }
+    if (!assigned) unassigned.push(ticket);
+  }
+  return { assignments, unassigned };
+}
+
+function tdDistributePriorityFirstBalanced(tickets, activeAgents) {
+  const sorted = [...activeAgents].sort((a,b) => a.AGENT_ID.localeCompare(b.AGENT_ID));
+  const loads = {}, assignments = {};
+  sorted.forEach(a => { loads[a.AGENT_ID] = 0; assignments[a.AGENT_ID] = []; });
+  const unassigned = [];
+  const p1s  = tdSortByPriority(tickets).filter(t => tdPriorityWeight(t.PRIORITY) === 1);
+  const rest = tdSortByPriority(tickets).filter(t => tdPriorityWeight(t.PRIORITY) !== 1);
+  let p1Idx = 0;
+  for (const ticket of p1s) {
+    let assigned = false;
+    while (p1Idx < sorted.length) {
+      const a = sorted[p1Idx];
+      if (loads[a.AGENT_ID] < Number(a.MAX_TICKETS)) { assignments[a.AGENT_ID].push(ticket); loads[a.AGENT_ID]++; assigned = true; break; }
+      p1Idx++;
+    }
+    if (!assigned) unassigned.push(ticket);
+  }
+  for (const ticket of rest) {
+    const avail = sorted.filter(a => loads[a.AGENT_ID] < Number(a.MAX_TICKETS));
+    if (!avail.length) { unassigned.push(ticket); continue; }
+    avail.sort((a,b) => loads[a.AGENT_ID] - loads[b.AGENT_ID]);
+    const chosen = avail[0];
+    assignments[chosen.AGENT_ID].push(ticket);
+    loads[chosen.AGENT_ID]++;
+  }
+  return { assignments, unassigned };
+}
+
+function tdHandleTicketFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) { toast('Please upload a .csv file', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const res = tdValidateAndLoad(e.target.result, TD_TICKET_COLS);
+    if (!res.ok) { tdShowError('td-tickets-status','td-tickets-checkmark',file.name,res.missing); tdState.tickets = null; }
+    else { tdState.tickets = res.rows; tdShowSuccess('td-tickets-status','td-tickets-checkmark',file.name,`${res.rows.length} tickets`); }
+    tdCheckBothLoaded();
+  };
+  reader.readAsText(file);
+}
+
+function tdHandleAgentFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) { toast('Please upload a .csv file', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const res = tdValidateAndLoad(e.target.result, TD_AGENT_COLS);
+    if (!res.ok) { tdShowError('td-agents-status','td-agents-checkmark',file.name,res.missing); tdState.agents = null; }
+    else {
+      tdState.agents = res.rows;
+      const shifts = new Set(res.rows.map(a => a.SHIFT));
+      tdShowSuccess('td-agents-status','td-agents-checkmark',file.name,`${res.rows.length} agents · ${shifts.size} shift${shifts.size!==1?'s':''} detected`);
+    }
+    tdCheckBothLoaded();
+  };
+  reader.readAsText(file);
+}
+
+function tdShowSuccess(statusId, checkId, filename, meta) {
+  const el = document.getElementById(statusId);
+  el.style.display = 'flex';
+  el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><strong style="color:var(--green);">${escapeHtml(filename)}</strong><span style="color:var(--text-muted);">·</span><span>${meta}</span>`;
+  const ck = document.getElementById(checkId); if (ck) ck.style.display = '';
+}
+
+function tdShowError(statusId, checkId, filename, missingCols) {
+  const el = document.getElementById(statusId);
+  el.style.display = 'flex'; el.style.flexWrap = 'wrap'; el.style.gap = '6px';
+  el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" style="flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span style="color:var(--red);font-weight:600;">${escapeHtml(filename)} — missing:</span>${missingCols.map(c=>`<span class="td-col-error">${c}</span>`).join('')}`;
+  const ck = document.getElementById(checkId); if (ck) ck.style.display = 'none';
+  toast(`Missing required columns in ${filename}`, 'error');
+}
+
+function tdCheckBothLoaded() {
+  const ready = !!(tdState.tickets && tdState.agents);
+  const btn = document.getElementById('td-distribute-btn');
+  if (btn) {
+    if (ready) {
+      const ac = tdState.agents.filter(a => tdIsAgentActive(a)).length;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Distribute ${tdState.tickets.length} ticket${tdState.tickets.length!==1?'s':''} to ${ac} active agent${ac!==1?'s':''}`;
+      btn.disabled = false;
+    } else {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Distribute Tickets`;
+      btn.disabled = true;
+    }
+  }
+  if (ready) {
+    tdRenderPreviews();
+    document.getElementById('td-preview-zone').style.display = '';
+    document.getElementById('td-controls-zone').style.display = '';
+    document.getElementById('td-output-zone').style.display = 'none';
+  }
+}
+
+function tdRenderPreviews() { tdRenderTicketsPreview(); tdRenderAgentsPreview(); }
+
+function tdRenderTicketsPreview() {
+  const tickets = tdState.tickets;
+  document.getElementById('td-tickets-count').textContent = tickets.length + ' tickets';
+  const counts = {1:0,2:0,3:0,4:0};
+  tickets.forEach(t => { counts[tdPriorityWeight(t.PRIORITY)]++; });
+  document.getElementById('td-tickets-priority-bar').innerHTML = [
+    counts[1] ? `<span class="td-priority-pill p1">P1 Critical: ${counts[1]}</span>` : '',
+    counts[2] ? `<span class="td-priority-pill p2">P2 High: ${counts[2]}</span>` : '',
+    counts[3] ? `<span class="td-priority-pill p3">P3 Medium: ${counts[3]}</span>` : '',
+    counts[4] ? `<span class="td-priority-pill p4">P4 Low: ${counts[4]}</span>` : ''
+  ].join('');
+  const rows = tickets.map(t => `
+    <tr class="${tdPriorityClass(t.PRIORITY)}">
+      <td class="font-mono" style="font-size:11px;">${escapeHtml(t.TICKET_ID)}</td>
+      <td>${tdPriorityBadge(t.PRIORITY)}</td>
+      <td><span class="tag">${escapeHtml(t.CATEGORY)}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t.SUMMARY)}">${escapeHtml(t.SUMMARY.slice(0,40))}${t.SUMMARY.length>40?'…':''}</td>
+      <td style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${escapeHtml(t.SLA_DUE)}</td>
+    </tr>`).join('');
+  document.getElementById('td-tickets-table').innerHTML = `<table><thead><tr><th>Ticket ID</th><th>Priority</th><th>Category</th><th>Summary</th><th>SLA Due</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function tdRenderAgentsPreview() {
+  const agents = tdState.agents;
+  const shiftCounts = {};
+  agents.forEach(a => { shiftCounts[a.SHIFT] = (shiftCounts[a.SHIFT] || 0) + 1; });
+  document.getElementById('td-agents-shift-pills').innerHTML = Object.entries(shiftCounts).map(([s,c]) => `<span class="td-shift-pill">${escapeHtml(s)}: ${c}</span>`).join('');
+  document.getElementById('td-agents-count').textContent = agents.length + ' agents';
+  const rows = agents.map(a => {
+    const active = tdIsAgentActive(a);
+    return `<tr>
+      <td><strong>${escapeHtml(a.AGENT_NAME)}</strong></td>
+      <td>${escapeHtml(a.SHIFT)} ${active ? '<span class="badge badge-green" style="font-size:10px;">Active</span>' : '<span class="badge badge-red" style="font-size:10px;">Shift ended</span>'}</td>
+      <td style="font-size:11px;white-space:nowrap;">${escapeHtml(a.SHIFT_START)}–${escapeHtml(a.SHIFT_END)}</td>
+      <td>${escapeHtml(a.MAX_TICKETS)}</td>
+      <td><span class="tag" style="font-size:11px;">${escapeHtml(a.SPECIALIZATION)}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('td-agents-table').innerHTML = `<table><thead><tr><th>Agent Name</th><th>Shift</th><th>Hours</th><th>Max Tickets</th><th>Specialization</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function tdRunDistribution() {
+  if (!tdState.tickets || !tdState.agents) return;
+  const tickets = tdState.flagSla ? tdFlagSlaBreaches(tdState.tickets) : tdState.tickets.map(t => ({ ...t, slaBreach: false }));
+  const activeAgents = tdState.agents.filter(a => tdIsAgentActive(a));
+  if (!activeAgents.length) { toast('No active agents for the current time', 'error'); return; }
+  let raw;
+  if (tdState.method === 'smart')           raw = tdDistributeSmartRouting(tickets, activeAgents);
+  else if (tdState.method === 'roundrobin') raw = tdDistributeRoundRobin(tickets, activeAgents);
+  else                                      raw = tdDistributePriorityFirstBalanced(tickets, activeAgents);
+  tdState.result = { ...raw, activeAgents, tickets };
+  tdRenderOutput();
+  const total = Object.values(raw.assignments).reduce((s,a) => s+a.length, 0);
+  addAudit(`Ticket distribution — ${total} tickets assigned to ${activeAgents.length} agents via ${TD_METHOD_LABELS[tdState.method]}${raw.unassigned.length ? `, ${raw.unassigned.length} unassigned` : ''}`);
+  toast(`Distribution complete — ${total} tickets assigned`, 'success');
+}
+
+function tdRenderOutput() {
+  const { assignments, unassigned, activeAgents, tickets } = tdState.result;
+  const total = Object.values(assignments).reduce((s,a) => s+a.length, 0);
+  const slaCount = tickets.filter(t => t.slaBreach).length;
+  document.getElementById('td-summary-bar').innerHTML = `
+    <div class="td-summary-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Distribution complete — <strong>${total}</strong> tickets assigned</span>
+      <span>·</span><span><strong>${activeAgents.length}</strong> agents</span>
+      <span>·</span><span>Method: <strong>${TD_METHOD_LABELS[tdState.method]}</strong></span>
+      ${slaCount ? `<span>·</span><span style="color:#fca5a5;"><strong>${slaCount}</strong> SLA breach flag${slaCount!==1?'s':''}</span>` : ''}
+      ${unassigned.length ? `<span>·</span><span style="color:#fde68a;"><strong>${unassigned.length}</strong> unassigned</span>` : ''}
+    </div>`;
+  const shiftOrder = ['Morning','Afternoon','Night'];
+  const sorted = [...activeAgents].sort((a,b) => {
+    const si = shiftOrder.indexOf(a.SHIFT) - shiftOrder.indexOf(b.SHIFT);
+    return si !== 0 ? si : a.AGENT_NAME.localeCompare(b.AGENT_NAME);
+  });
+  const shiftBadge = { Morning:'badge-green', Afternoon:'badge-blue', Night:'badge-gray' };
+  document.getElementById('td-agent-output').innerHTML = sorted.map(agent => {
+    const assigned = (assignments[agent.AGENT_ID] || []).slice().sort((a,b) => tdPriorityWeight(a.PRIORITY) - tdPriorityWeight(b.PRIORITY));
+    const max = Number(agent.MAX_TICKETS), cnt = assigned.length;
+    const pct = max > 0 ? Math.round((cnt/max)*100) : 0;
+    const full = cnt >= max;
+    return `
+      <div class="td-agent-card">
+        <div class="td-agent-card-header">
+          <div>
+            <div class="td-agent-card-name">${escapeHtml(agent.AGENT_NAME)}</div>
+            <div class="td-agent-card-meta">${escapeHtml(agent.AGENT_ID)} &nbsp;·&nbsp; <span class="tag" style="font-size:10px;">${escapeHtml(agent.SPECIALIZATION)}</span></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <span class="badge ${shiftBadge[agent.SHIFT]||'badge-gray'}" style="font-size:10px;">${escapeHtml(agent.SHIFT)}</span>
+            <div style="font-size:12px;font-weight:700;margin-top:4px;color:${full?'var(--amber)':'var(--text)'};">${cnt} / ${max}</div>
+          </div>
+        </div>
+        <div class="td-capacity-wrap">
+          <div class="td-capacity-label"><span>Capacity</span><span>${pct}%</span></div>
+          <div class="td-capacity-bar-bg"><div class="td-capacity-bar-fill${full?' full':''}" style="width:${pct}%;"></div></div>
+        </div>
+        <div class="td-ticket-list">
+          ${assigned.length ? assigned.map(t => `
+            <div class="td-ticket-row">
+              ${tdPriorityBadge(t.PRIORITY)}
+              <span class="td-ticket-id">${escapeHtml(t.TICKET_ID)}</span>
+              <span class="td-ticket-summary" title="${escapeHtml(t.SUMMARY)}">${escapeHtml(t.SUMMARY.slice(0,35))}${t.SUMMARY.length>35?'…':''}</span>
+              <span class="td-ticket-sla">${escapeHtml((t.SLA_DUE||'').split(' ')[0])}</span>
+              ${t.slaBreach ? '<span class="td-sla-badge">SLA BREACH</span>' : ''}
+            </div>`).join('')
+            : '<p style="font-size:12px;color:var(--text-muted);padding:4px 0;">No tickets assigned</p>'}
+        </div>
+      </div>`;
+  }).join('');
+  if (unassigned.length) {
+    document.getElementById('td-unassigned-zone').innerHTML = `
+      <div class="td-unassigned-box">
+        <div class="td-unassigned-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Unassigned tickets — ${unassigned.length} — all agents at capacity or no specialization match
+        </div>
+        ${unassigned.map(t => `
+          <div class="td-unassigned-row">
+            ${tdPriorityBadge(t.PRIORITY)}
+            <span class="font-mono" style="font-size:11px;">${escapeHtml(t.TICKET_ID)}</span>
+            <span style="flex:1;font-size:12px;">${escapeHtml(t.SUMMARY.slice(0,50))}${t.SUMMARY.length>50?'…':''}</span>
+            ${t.slaBreach ? '<span class="td-sla-badge">SLA BREACH</span>' : ''}
+          </div>`).join('')}
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-amber btn-sm" onclick="tdOpenReassignModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            Reassign manually
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="tdEscalate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Escalate to shift lead
+          </button>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('td-unassigned-zone').innerHTML = '';
+  }
+  document.getElementById('td-output-zone').style.display = '';
+}
+
+function tdSelectMethod(method, btn) {
+  tdState.method = method;
+  document.querySelectorAll('.td-method-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('td-method-desc').textContent = TD_METHOD_DESCS[method] || '';
+  document.getElementById('td-output-zone').style.display = 'none';
+}
+
+function tdToggleSample(boxId, el) {
+  const box = document.getElementById(boxId);
+  box.style.display = box.style.display === 'none' ? '' : 'none';
+}
+
+function tdLoadSampleTickets() {
+  tdState.tickets = tdBuildSampleTickets();
+  tdShowSuccess('td-tickets-status','td-tickets-checkmark','sample-tickets.csv',`${tdState.tickets.length} tickets (sample data)`);
+  document.getElementById('td-tickets-status').style.display = 'flex';
+  tdCheckBothLoaded();
+  toast('Sample tickets loaded', 'success');
+}
+
+function tdLoadSampleAgents() {
+  tdState.agents = TD_SAMPLE_AGENTS.map(a => ({ ...a }));
+  const shifts = new Set(TD_SAMPLE_AGENTS.map(a => a.SHIFT));
+  tdShowSuccess('td-agents-status','td-agents-checkmark','sample-agents.csv',`${TD_SAMPLE_AGENTS.length} agents · ${shifts.size} shifts detected (sample data)`);
+  document.getElementById('td-agents-status').style.display = 'flex';
+  tdCheckBothLoaded();
+  toast('Sample agents loaded', 'success');
+}
+
+function tdStartOver() {
+  tdState.tickets = null; tdState.agents = null; tdState.result = null;
+  tdState.method = 'smart'; tdState.flagSla = false;
+  ['td-tickets-status','td-agents-status'].forEach(id => { const el = document.getElementById(id); if (el) { el.style.display='none'; el.innerHTML=''; } });
+  ['td-tickets-checkmark','td-agents-checkmark'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display='none'; });
+  document.getElementById('td-tickets-input').value = '';
+  document.getElementById('td-agents-input').value = '';
+  document.getElementById('td-preview-zone').style.display = 'none';
+  document.getElementById('td-controls-zone').style.display = 'none';
+  document.getElementById('td-output-zone').style.display = 'none';
+  document.querySelectorAll('.td-method-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  const sla = document.getElementById('td-sla-flag'); if (sla) sla.checked = false;
+  const btn = document.getElementById('td-distribute-btn');
+  if (btn) { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Distribute Tickets`; btn.disabled = true; }
+}
+
+function tdRerun() {
+  tdState.result = null; tdState.method = 'smart';
+  document.getElementById('td-output-zone').style.display = 'none';
+  document.querySelectorAll('.td-method-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('td-method-desc').textContent = TD_METHOD_DESCS.smart;
+}
+
+function tdDownloadSheet() {
+  if (!tdState.result) return;
+  const { assignments, activeAgents } = tdState.result;
+  const at = nowTs();
+  const header = 'TICKET_ID,PRIORITY,CATEGORY,SUMMARY,SLA_DUE,ASSIGNED_TO,AGENT_ID,SHIFT,ASSIGNED_AT,SLA_BREACH_FLAG';
+  const rows = [];
+  activeAgents.forEach(a => { (assignments[a.AGENT_ID]||[]).forEach(t => { rows.push([t.TICKET_ID,t.PRIORITY,t.CATEGORY,'"'+t.SUMMARY.replace(/"/g,'""')+'"',t.SLA_DUE,a.AGENT_NAME,a.AGENT_ID,a.SHIFT,at,t.slaBreach?'YES':'NO'].join(',')); }); });
+  const blob = new Blob([header+'\n'+rows.join('\n')], { type:'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'ticket-distribution-'+today()+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+  toast('Distribution sheet downloaded', 'success');
+}
+
+function tdCopyJira() {
+  if (!tdState.result) return;
+  const { assignments, activeAgents } = tdState.result;
+  const lines = [];
+  activeAgents.forEach(a => { (assignments[a.AGENT_ID]||[]).forEach(t => { lines.push(`${t.TICKET_ID} | assignee: ${a.AGENT_ID}`); }); });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Jira bulk-assign format copied','success')).catch(() => toast('Copy failed — allow clipboard access','error'));
+}
+
+function tdSendAria() {
+  if (!tdState.result) return;
+  // TODO: wire to ARIA panel when implemented
+  const { assignments, unassigned, activeAgents } = tdState.result;
+  const total = Object.values(assignments).reduce((s,a) => s+a.length, 0);
+  const slaCount = Object.values(assignments).flat().filter(t => t.slaBreach).length;
+  const summary = JSON.stringify({ source:'AccessOps Ticket Distribution', timestamp:nowTs(), method:TD_METHOD_LABELS[tdState.method], totalTickets:(tdState.tickets||[]).length, totalAssigned:total, unassigned:unassigned.length, slaBreachFlags:slaCount, agents:activeAgents.map(a=>({id:a.AGENT_ID,name:a.AGENT_NAME,assigned:(assignments[a.AGENT_ID]||[]).length,max:Number(a.MAX_TICKETS)})) }, null, 2);
+  navigator.clipboard.writeText(summary).then(() => toast('Distribution summary copied — paste into ARIA when ready','info')).catch(() => toast('Copy failed — allow clipboard access','error'));
+}
+
+function tdOpenReassignModal() {
+  if (!tdState.result) return;
+  const { unassigned, activeAgents, assignments } = tdState.result;
+  const agentOpts = activeAgents.map(a => `<option value="${a.AGENT_ID}">${escapeHtml(a.AGENT_NAME)} (${a.AGENT_ID}) — ${(assignments[a.AGENT_ID]||[]).length}/${a.MAX_TICKETS}</option>`).join('');
+  showModal('Reassign Tickets Manually', `
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Select an agent for each unassigned ticket. MAX_TICKETS cap is not enforced here.</p>
+    ${unassigned.map((t,i) => `
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          ${tdPriorityBadge(t.PRIORITY)}
+          <span class="font-mono" style="font-size:11px;">${escapeHtml(t.TICKET_ID)}</span>
+          <span style="font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.SUMMARY.slice(0,45))}${t.SUMMARY.length>45?'…':''}</span>
+          ${t.slaBreach ? '<span class="td-sla-badge">SLA BREACH</span>' : ''}
+        </div>
+        <select class="form-control" style="font-size:12px;" id="td-reassign-${i}">
+          <option value="">— Select agent —</option>${agentOpts}
+        </select>
+      </div>`).join('')}`, () => {
+    const reassignedIds = new Set();
+    unassigned.forEach((t,i) => {
+      const sel = document.getElementById('td-reassign-'+i);
+      if (sel && sel.value) {
+        if (!tdState.result.assignments[sel.value]) tdState.result.assignments[sel.value] = [];
+        tdState.result.assignments[sel.value].push(t);
+        reassignedIds.add(t.TICKET_ID);
+      }
+    });
+    tdState.result.unassigned = unassigned.filter(t => !reassignedIds.has(t.TICKET_ID));
+    closeModal();
+    if (reassignedIds.size) { toast(`${reassignedIds.size} ticket${reassignedIds.size!==1?'s':''} reassigned`,'success'); tdRenderOutput(); }
+  }, 'Apply Reassignments');
+}
+
+function tdEscalate() {
+  if (!tdState.result) return;
+  const { unassigned } = tdState.result;
+  const text = `Unassigned tickets requiring shift lead attention (${nowTs()}):\n\n` +
+    unassigned.map(t => `${t.TICKET_ID} [${t.PRIORITY}] — ${t.SUMMARY}${t.slaBreach?' *** SLA BREACH ***':''}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => toast('Escalation summary copied to clipboard','success')).catch(() => toast('Copy failed — allow clipboard access','error'));
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+
+renderPendingRequests();
+</script>
+</body>
+</html>
